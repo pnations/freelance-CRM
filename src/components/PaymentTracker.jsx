@@ -145,46 +145,48 @@ function PaymentTracker() {
         </form>
       )}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Order</th>
-            <th>Amount</th>
-            <th>Date</th>
-            <th>Method</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {payments.length > 0 ? (
-            payments.map((payment) => {
-              const orderInfo = getOrderInfo(payment.orderId);
-              return (
-                <tr key={payment.id}>
-                  <td>{orderInfo.clientName} - {orderInfo.type}</td>
-                  <td>${payment.amount.toFixed(2)}</td>
-                  <td>{payment.date}</td>
-                  <td>{payment.method}</td>
-                  <td>
-                    <button
-                      className="btn-danger btn-small"
-                      onClick={() => handleDelete(payment.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
+      <div className="table-wrapper">
+        <table className="table">
+          <thead>
             <tr>
-              <td colSpan="5" className="empty-state">
-                No payments logged yet.
-              </td>
+              <th>Order</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Method</th>
+              <th>Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {payments.length > 0 ? (
+              payments.map((payment) => {
+                const orderInfo = getOrderInfo(payment.orderId);
+                return (
+                  <tr key={payment.id}>
+                    <td>{orderInfo.clientName} - {orderInfo.type}</td>
+                    <td>${payment.amount.toFixed(2)}</td>
+                    <td>{payment.date}</td>
+                    <td>{payment.method}</td>
+                    <td>
+                      <button
+                        className="btn-danger btn-small"
+                        onClick={() => handleDelete(payment.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="5" className="empty-state">
+                  No payments logged yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

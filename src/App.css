@@ -128,9 +128,12 @@
 @media (max-width: 768px) {
   .app {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
   }
 
   .sidebar {
+    grid-row: 2;
+    grid-column: 1;
     width: 100%;
     padding: 16px;
   }
@@ -157,6 +160,38 @@
   }
 
   .main-content {
+    grid-row: 3;
+    grid-column: 1;
     padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .demo-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .sidebar {
+    padding: 12px;
+  }
+
+  .sidebar-header {
+    gap: 8px;
+  }
+
+  .sidebar-header h1 {
+    font-size: 18px;
+  }
+
+  .nav-menu button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .main-content {
+    padding: 16px;
   }
 }

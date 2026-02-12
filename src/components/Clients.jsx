@@ -199,56 +199,58 @@ function Clients() {
         </form>
       )}
 
-      <table className="table">
-            <thead>
-              <tr>
-                <th>Business</th>
-                <th>Contact</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Projects</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {getFilteredClients().map((client) => {
-                const clientProjects = getClientProjects(client.businessName);
-                return (
-                  <tr
-                    key={client.id}
-                    className={selectedClient?.id === client.id ? 'selected-row' : ''}
-                    onClick={() => viewClientDetails(client)}
-                  >
-                    <td>{client.businessName}</td>
-                    <td>{client.contactPerson}</td>
-                    <td>{client.email || '—'}</td>
-                    <td>{client.phone || '—'}</td>
-                    <td>{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
-                    <td>
-                      <button
-                        className="btn-secondary btn-small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(client);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn-danger btn-small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(client.id);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="table-wrapper">
+        <table className="table">
+              <thead>
+                <tr>
+                  <th>Business</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Projects</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getFilteredClients().map((client) => {
+                  const clientProjects = getClientProjects(client.businessName);
+                  return (
+                    <tr
+                      key={client.id}
+                      className={selectedClient?.id === client.id ? 'selected-row' : ''}
+                      onClick={() => viewClientDetails(client)}
+                    >
+                      <td>{client.businessName}</td>
+                      <td>{client.contactPerson}</td>
+                      <td>{client.email || '—'}</td>
+                      <td>{client.phone || '—'}</td>
+                      <td>{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
+                      <td>
+                        <button
+                          className="btn-secondary btn-small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(client);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn-danger btn-small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(client.id);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           {getFilteredClients().length === 0 && (
             <p className="empty-state">
               {searchQuery ? 'No clients match your search.' : 'No clients yet. Add your first client to get started.'}
@@ -299,30 +301,32 @@ function Clients() {
               <h4>Projects ({getClientProjects(selectedClient.businessName).length})</h4>
               <div className="projects-list">
                 {getClientProjects(selectedClient.businessName).length > 0 ? (
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Project Type</th>
-                        <th>Date Accepted</th>
-                        <th>Status</th>
-                        <th>Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getClientProjects(selectedClient.businessName).map((project) => (
-                        <tr key={project.id}>
-                          <td>{project.type}</td>
-                          <td>{new Date(project.dateAccepted).toLocaleDateString()}</td>
-                          <td>
-                            <span className={`status-badge status-${project.status.toLowerCase().replace(' ', '-')}`}>
-                              {project.status}
-                            </span>
-                          </td>
-                          <td>${Number(project.cost).toLocaleString()}</td>
+                  <div className="table-wrapper">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Project Type</th>
+                          <th>Date Accepted</th>
+                          <th>Status</th>
+                          <th>Cost</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {getClientProjects(selectedClient.businessName).map((project) => (
+                          <tr key={project.id}>
+                            <td>{project.type}</td>
+                            <td>{new Date(project.dateAccepted).toLocaleDateString()}</td>
+                            <td>
+                              <span className={`status-badge status-${project.status.toLowerCase().replace(' ', '-')}`}>
+                                {project.status}
+                              </span>
+                            </td>
+                            <td>${Number(project.cost).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <p className="empty-state">No projects for this client yet.</p>
                 )}

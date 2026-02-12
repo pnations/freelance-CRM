@@ -137,40 +137,42 @@ function Dashboard() {
 
       <div className="orders-table">
         <h3>Orders ({filteredOrders.length})</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Client Name</th>
-              <th>Project Type</th>
-              <th>Date Accepted</th>
-              <th>Status</th>
-              <th>Project Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.clientName}</td>
-                  <td>{order.type}</td>
-                  <td>{order.dateAccepted}</td>
-                  <td>
-                    <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td>${order.cost.toFixed(2)}</td>
-                </tr>
-              ))
-            ) : (
+        <div className="table-wrapper">
+          <table>
+            <thead>
               <tr>
-                <td colSpan="5" className="empty-state">
-                  No orders found
-                </td>
+                <th>Client Name</th>
+                <th>Project Type</th>
+                <th>Date Accepted</th>
+                <th>Status</th>
+                <th>Project Cost</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
+                  <tr key={order.id}>
+                    <td>{order.clientName}</td>
+                    <td>{order.type}</td>
+                    <td>{order.dateAccepted}</td>
+                    <td>
+                      <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>${order.cost.toFixed(2)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="empty-state">
+                    No orders found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -118,6 +118,16 @@
   box-shadow: var(--shadow-sm);
 }
 
+.orders-table .table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.orders-table .table-wrapper table {
+  min-width: 640px;
+}
+
 .orders-table h3 {
   padding: 20px 24px;
   margin: 0;

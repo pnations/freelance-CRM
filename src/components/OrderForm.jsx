@@ -165,55 +165,57 @@ function OrderForm() {
         </form>
       )}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Client</th>
-            <th>Type</th>
-            <th>Date Accepted</th>
-            <th>Status</th>
-            <th>Cost</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.length > 0 ? (
-            orders.map((order) => (
-              <tr key={order.id}>
-                <td>{order.clientName}</td>
-                <td>{order.type}</td>
-                <td>{order.dateAccepted}</td>
-                <td>
-                  <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td>${order.cost.toFixed(2)}</td>
-                <td>
-                  <button
-                    className="btn-secondary btn-small"
-                    onClick={() => handleEdit(order)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn-danger btn-small"
-                    onClick={() => handleDelete(order.id)}
-                  >
-                    Delete
-                  </button>
+      <div className="table-wrapper">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Date Accepted</th>
+              <th>Status</th>
+              <th>Cost</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.length > 0 ? (
+              orders.map((order) => (
+                <tr key={order.id}>
+                  <td>{order.clientName}</td>
+                  <td>{order.type}</td>
+                  <td>{order.dateAccepted}</td>
+                  <td>
+                    <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td>${order.cost.toFixed(2)}</td>
+                  <td>
+                    <button
+                      className="btn-secondary btn-small"
+                      onClick={() => handleEdit(order)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn-danger btn-small"
+                      onClick={() => handleDelete(order.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="empty-state">
+                  No orders yet. Create one to get started!
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="6" className="empty-state">
-                No orders yet. Create one to get started!
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

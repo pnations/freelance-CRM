@@ -147,43 +147,45 @@ function HoursLogger() {
         Total Hours: {totalHours} hours
       </div>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Order</th>
-            <th>Hours</th>
-            <th>Date</th>
-            <th>Notes</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hours.length > 0 ? (
-            hours.map((hour) => (
-              <tr key={hour.id}>
-                <td>{getOrderInfo(hour.orderId)}</td>
-                <td>{hour.hours}</td>
-                <td>{hour.date}</td>
-                <td>{hour.notes}</td>
-                <td>
-                  <button
-                    className="btn-danger btn-small"
-                    onClick={() => handleDelete(hour.id)}
-                  >
-                    Delete
-                  </button>
+      <div className="table-wrapper">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Hours</th>
+              <th>Date</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hours.length > 0 ? (
+              hours.map((hour) => (
+                <tr key={hour.id}>
+                  <td>{getOrderInfo(hour.orderId)}</td>
+                  <td>{hour.hours}</td>
+                  <td>{hour.date}</td>
+                  <td>{hour.notes}</td>
+                  <td>
+                    <button
+                      className="btn-danger btn-small"
+                      onClick={() => handleDelete(hour.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="empty-state">
+                  No hours logged yet.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="5" className="empty-state">
-                No hours logged yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
