@@ -1,0 +1,179 @@
+import React, { useState, useEffect } from 'react';
+import { getOrders, getPayments, getHours } from '../services/dataService';
+import '../styles/dashboard.css';
+
+function Dashboard() {
+  const [orders, setOrders] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [hours, setHours] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [clientFilter, setClientFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+
+  useEffect(() => {
+    loadData();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [orders, statusFilter, clientFilter, typeFilter]);
+
+  async function loadData() {
+    const ordersData = await getOrders();
+    const paymentsData = await getPayments();
+    const hoursData = await getHours();
+
+    setOrders(ordersData);
+    setPayments(paymentsData);
+    setHours(hoursData);
+  }
+
+  function applyFilters() {
+    let filtered = orders;
+
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter((order) => order.status === statusFilter);
+    }
+
+    if (clientFilter !== 'All') {
+      filtered = filtered.filter((order) => order.clientId === clientFilter);
+    }
+
+    if (typeFilter !== 'All') {
+      filtered = filtered.filter((order) => order.type === typeFilter);
+    }
+
+    setFilteredOrders(filtered);
+  }
+
+  function getTotalRevenue() {
+    return orders.reduce((total, order) => total + Number(order.cost), 0);
+  }
+
+  function getPaidRevenue() {
+    return payments.reduce((total, payment) => total + Number(payment.amount), 0);
+  }
+
+  function getPendingPayments() {
+    return getTotalRevenue() - getPaidRevenue();
+  }
+
+  function getTotalHours() {
+    return hours.reduce((total, hour) => total + Number(hour.hours), 0);
+  }
+
+  const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Invoiced', 'Paid'];
+  const types = ['All', ...new Set(orders.map((o) => o.type))];
+  const clientNames = ['All', ...new Set(orders.map((o) => o.clientName))];
+
+  return (
+    <div className="dashboard">
+      <h2>Dashboard Overview</h2>
+
+      <div className="metrics">
+        <div className="metric-card">
+          <div className="metric-label">Total Revenue</div>
+          <div className="metric-value">${getTotalRevenue().toFixed(2)}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Paid Revenue</div>
+          <div className="metric-value">${getPaidRevenue().toFixed(2)}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Pending Payments</div>
+          <div className="metric-value">${getPendingPayments().toFixed(2)}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Total Hours</div>
+          <div className="metric-value">{getTotalHours()}</div>
+        </div>
+      </div>
+
+      <div className="filters-section">
+        <h3>Filters</h3>
+        <div className="filters">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={clientFilter}
+            onChange={(e) => setClientFilter(e.target.value)}
+          >
+            {clientNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            {types.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="orders-table">
+        <h3>Orders ({filteredOrders.length})</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Project Type</th>
+              <th>Date Accepted</th>
+              <th>Status</th>
+              <th>Project Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
+                <tr key={order.id}>
+                  <td>{order.clientName}</td>
+                  <td>{order.type}</td>
+                  <td>{order.dateAccepted}</td>
+                  <td>
+                    <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td>${order.cost.toFixed(2)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="empty-state">
+                  No orders found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default Dashboard;
