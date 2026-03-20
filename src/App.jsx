@@ -13,8 +13,8 @@ function App() {
   return (
     <div className="app">
       <div className="demo-banner">
-        <span className="demo-badge">DEMO MODE</span>
-        <span className="demo-text">Using sample data • Supabase integration coming soon</span>
+        <span className="demo-badge">EARLY VERSION</span>
+        <span className="demo-text">You are using an early release of Freelance CRM. Core features are live, and more improvements are on the way.</span>
       </div>
       <nav className="sidebar">
         <div className="sidebar-header">
