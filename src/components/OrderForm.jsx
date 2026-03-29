@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { getOrders, addOrder, updateOrder, deleteOrder } from '../services/dataService';
+import ConfirmDialog from './ConfirmDialog';
 import '../styles/forms.css';
 
-function OrderForm() {
+function OrderForm({ readOnly = false }) {
   const [orders, setOrders] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [formData, setFormData] = useState({
     clientName: '',
     type: '',
@@ -15,38 +20,60 @@ function OrderForm() {
   });
 
   useEffect(() => {
+    if (readOnly) {
+      setOrders([]);
+      setShowForm(false);
+      setEditingId(null);
+      return;
+    }
     loadData();
-  }, []);
+  }, [readOnly]);
 
   async function loadData() {
-    const ordersData = await getOrders();
-    setOrders(ordersData);
+    try {
+      const ordersData = await getOrders();
+      setOrders(ordersData);
+      setErrorMessage('');
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to load orders.');
+      setOrders([]);
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (readOnly) return;
+
     if (formData.clientName && formData.type && formData.dateAccepted && formData.cost) {
-      if (editingId) {
-        await updateOrder(
-          editingId,
-          formData.clientName,
-          formData.type,
-          formData.dateAccepted,
-          formData.status,
-          parseFloat(formData.cost)
-        );
-        setEditingId(null);
-      } else {
-        await addOrder(
-          formData.clientName,
-          formData.type,
-          formData.dateAccepted,
-          formData.status,
-          parseFloat(formData.cost)
-        );
+      setIsSubmitting(true);
+      setErrorMessage('');
+      try {
+        if (editingId) {
+          await updateOrder(
+            editingId,
+            formData.clientName,
+            formData.type,
+            formData.dateAccepted,
+            formData.status,
+            parseFloat(formData.cost)
+          );
+          setEditingId(null);
+        } else {
+          await addOrder(
+            formData.clientName,
+            formData.type,
+            formData.dateAccepted,
+            formData.status,
+            parseFloat(formData.cost)
+          );
+        }
+        resetForm();
+        await loadData();
+      } catch (error) {
+        setErrorMessage(error.message || 'Failed to save order.');
+      } finally {
+        setIsSubmitting(false);
       }
-      resetForm();
-      loadData();
     }
   }
 
@@ -62,15 +89,31 @@ function OrderForm() {
   }
 
   function handleEdit(order) {
+    if (readOnly) return;
     setFormData(order);
     setEditingId(order.id);
     setShowForm(true);
   }
 
   async function handleDelete(id) {
-    if (window.confirm('Are you sure you want to delete this order?')) {
+    if (readOnly || deletingId) return;
+    setConfirmDeleteId(id);
+  }
+
+  async function confirmDelete() {
+    if (!confirmDeleteId) return;
+
+    const id = confirmDeleteId;
+    setDeletingId(id);
+    setConfirmDeleteId(null);
+    setErrorMessage('');
+    try {
       await deleteOrder(id);
-      loadData();
+      await loadData();
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to delete order.');
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -79,8 +122,11 @@ function OrderForm() {
       <div className="header">
         <h2>Orders</h2>
         <button
+          type="button"
           className="btn-primary"
+          disabled={readOnly}
           onClick={() => {
+            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -90,6 +136,9 @@ function OrderForm() {
           {showForm ? 'Cancel' : 'Add Order'}
         </button>
       </div>
+
+      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
+      {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       {showForm && (
         <form className="form" onSubmit={handleSubmit}>
@@ -159,8 +208,8 @@ function OrderForm() {
             />
           </div>
 
-          <button type="submit" className="btn-primary">
-            {editingId ? 'Update Order' : 'Add Order'}
+          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+            {isSubmitting ? 'Saving...' : editingId ? 'Update Order' : 'Add Order'}
           </button>
         </form>
       )}
@@ -189,19 +238,23 @@ function OrderForm() {
                       {order.status}
                     </span>
                   </td>
-                  <td>${order.cost.toFixed(2)}</td>
+                  <td>${Number(order.cost || 0).toFixed(2)}</td>
                   <td>
                     <button
+                      type="button"
                       className="btn-secondary btn-small"
+                      disabled={readOnly || deletingId === order.id}
                       onClick={() => handleEdit(order)}
                     >
                       Edit
                     </button>
                     <button
+                      type="button"
                       className="btn-danger btn-small"
+                      disabled={readOnly || deletingId === order.id}
                       onClick={() => handleDelete(order.id)}
                     >
-                      Delete
+                      {deletingId === order.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </td>
                 </tr>
@@ -216,6 +269,16 @@ function OrderForm() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDeleteId)}
+        title="Delete order"
+        message="This will permanently delete the order and any related payments and hours."
+        confirmLabel="Delete order"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

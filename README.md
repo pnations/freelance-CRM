@@ -2,7 +2,7 @@
 
 A lightweight, professional CRM dashboard for managing freelance clients, orders, payments, and hours tracking. Built with React, Vite, and vanilla CSS with a beautiful teal color scheme.
 
-**Status**: Demo version with sample data. Supabase integration coming soon.
+**Status**: Early version with Supabase-backed data.
 
 ## Features
 
@@ -10,18 +10,16 @@ A lightweight, professional CRM dashboard for managing freelance clients, orders
 - **Client Management** - Add, edit, and manage client information with contact details and project history
 - **Client Search** - Search clients by name, contact person, email, phone, or notes
 - **Order Management** - Create and track orders with client name, project type, status, and cost
-- **Payment Tracking** - Log and track payments with different methods and dates
-- **Hours Logger** - Track time spent on each project
+- **Payments & Hours** - Log payments with optional hours and comments in one unified logged table
 - **Advanced Filtering** - Filter orders by status, client name, and project type
 - **Professional UI** - Clean, responsive design with teal color scheme and smooth interactions
-- **Demo Mode** - Built-in demo mode with sample data (currently active)
+- **Read-Only Fallback** - When Supabase is not configured, the app stays accessible in read-only mode
 - **Responsive Design** - Fully responsive on desktop, tablet, and mobile devices
 
 ## Tech Stack
 
 - **Frontend**: React 18, Vite, Vanilla CSS
-- **Demo Data**: In-memory storage
-- **Backend**: Supabase (coming soon)
+- **Backend**: Supabase
 - **Features**: Auto-refresh dashboard, real-time calculations, responsive layout
 
 ## Setup Instructions
@@ -62,9 +60,9 @@ npm run build
 npm run preview
 ```
 
-## Demo Data
+## Data Mode
 
-The app comes with sample clients and orders to showcase functionality. All data is stored in memory and resets on page reload.
+The app runs in Supabase-only mode. If Supabase environment variables are missing, the UI stays available in read-only mode and write actions are disabled.
 
 ## Future Roadmap
 
@@ -77,12 +75,29 @@ The app comes with sample clients and orders to showcase functionality. All data
 
 ## Environment Variables
 
-When Supabase is integrated, create a `.env.local` file:
+Create a `.env.local` file:
 
 ```bash
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+## Supabase Migration (Required)
+
+Run this SQL in the Supabase SQL Editor to support unified Payments + Hours logging:
+
+```sql
+alter table public.payments
+   add column if not exists hours numeric,
+   add column if not exists comment text;
+```
+
+Versioned file in this repo:
+- `supabase/migrations/20260327_add_payments_hours_comment.sql`
+
+Notes:
+- Both columns are nullable so existing rows remain valid.
+- The app writes optional hours to `payments.hours` and optional notes to `payments.comment`.
 
 ## Project Structure
 
@@ -92,8 +107,7 @@ src/
 │   ├── Dashboard.jsx
 │   ├── Clients.jsx
 │   ├── OrderForm.jsx
-│   ├── PaymentTracker.jsx
-│   └── HoursLogger.jsx
+│   └── PaymentTracker.jsx
 ├── services/
 │   ├── dataService.js (data management)
 │   └── supabase.js (Supabase config)

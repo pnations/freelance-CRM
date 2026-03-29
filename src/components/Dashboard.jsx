@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { getOrders, getPayments, getHours } from '../services/dataService';
+import { getOrders, getPayments } from '../services/dataService';
 import '../styles/dashboard.css';
 
-function Dashboard() {
+function Dashboard({ readOnly = false }) {
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [hours, setHours] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
   const [clientFilter, setClientFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    if (readOnly) {
+      setOrders([]);
+      setPayments([]);
+      return;
+    }
+
     loadData();
     
     // Auto-refresh every 30 seconds
@@ -20,20 +26,25 @@ function Dashboard() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => {
     applyFilters();
   }, [orders, statusFilter, clientFilter, typeFilter]);
 
   async function loadData() {
-    const ordersData = await getOrders();
-    const paymentsData = await getPayments();
-    const hoursData = await getHours();
+    try {
+      const ordersData = await getOrders();
+      const paymentsData = await getPayments();
 
-    setOrders(ordersData);
-    setPayments(paymentsData);
-    setHours(hoursData);
+      setOrders(ordersData);
+      setPayments(paymentsData);
+      setErrorMessage('');
+    } catch (error) {
+      setOrders([]);
+      setPayments([]);
+      setErrorMessage(error.message || 'Failed to load dashboard data.');
+    }
   }
 
   function applyFilters() {
@@ -44,7 +55,7 @@ function Dashboard() {
     }
 
     if (clientFilter !== 'All') {
-      filtered = filtered.filter((order) => order.clientId === clientFilter);
+      filtered = filtered.filter((order) => order.clientName === clientFilter);
     }
 
     if (typeFilter !== 'All') {
@@ -67,7 +78,7 @@ function Dashboard() {
   }
 
   function getTotalHours() {
-    return hours.reduce((total, hour) => total + Number(hour.hours), 0);
+    return payments.reduce((total, payment) => total + Number(payment.hours || 0), 0);
   }
 
   const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Invoiced', 'Paid'];
@@ -77,6 +88,8 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <h2>Dashboard Overview</h2>
+      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable data operations.</p>}
+      {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       <div className="metrics">
         <div className="metric-card">

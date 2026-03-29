@@ -21,9 +21,9 @@ dashboard/
 ├── src
 │   ├── components
 │   │   ├── Dashboard.jsx
+│   │   ├── Clients.jsx
 │   │   ├── OrderForm.jsx
-│   │   ├── PaymentTracker.jsx
-│   │   └── HoursLogger.jsx
+│   │   └── PaymentTracker.jsx
 │   │
 │   ├── services
 │   │   ├── supabase.js
@@ -61,13 +61,13 @@ dashboard/
 
 ## React Components
 - Dashboard.jsx — metrics overview and data table fed by Supabase data
+- Clients.jsx — create, update, and delete client records and view related projects
 - OrderForm.jsx — create, update, and delete orders
-- PaymentTracker.jsx — log and delete payments tied to orders
-- HoursLogger.jsx — log and delete hours with optional notes
+- PaymentTracker.jsx — log payments with optional hours/comments and manage a unified payments log
 
 ## Services
 - supabase.js — initializes the Supabase client from environment variables
-- dataService.js — CRUD helpers for `orders`, `payments`, and `hours` tables
+- dataService.js — CRUD helpers for `clients`, `orders`, `payments`, and `hours` tables
 
 ## Styling
 - App.css — layout and navigation styling
@@ -82,5 +82,5 @@ dashboard/
 ## Data Flow (Supabase)
 
 ```
-Component → dataService.js → Supabase tables (orders, payments, hours) → component render
+Component → dataService.js → Supabase tables (clients, orders, payments, hours) → component render
 ```

@@ -11,6 +11,26 @@
   letter-spacing: -0.5px;
 }
 
+.dashboard .error-banner {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.dashboard .readonly-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #bfdbfe;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

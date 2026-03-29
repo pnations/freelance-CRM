@@ -1,40 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { getPayments, getOrders, addPayment, deletePayment } from '../services/dataService';
+import ConfirmDialog from './ConfirmDialog';
 import '../styles/forms.css';
 
-function PaymentTracker() {
+function PaymentTracker({ readOnly = false }) {
   const [payments, setPayments] = useState([]);
   const [orders, setOrders] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+  const [confirmDeletePaymentId, setConfirmDeletePaymentId] = useState(null);
   const [formData, setFormData] = useState({
     orderId: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     method: 'Bank Transfer',
+    hours: '',
+    comment: '',
   });
 
   useEffect(() => {
+    if (readOnly) {
+      setPayments([]);
+      setOrders([]);
+      setShowForm(false);
+      return;
+    }
     loadData();
-  }, []);
+  }, [readOnly]);
 
   async function loadData() {
-    const paymentsData = await getPayments();
-    const ordersData = await getOrders();
-    setPayments(paymentsData);
-    setOrders(ordersData);
+    try {
+      const paymentsData = await getPayments();
+      const ordersData = await getOrders();
+      setPayments(paymentsData);
+      setOrders(ordersData);
+      setErrorMessage('');
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to load payments.');
+      setPayments([]);
+      setOrders([]);
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (readOnly) return;
+
     if (formData.orderId && formData.amount && formData.date) {
-      await addPayment(
-        formData.orderId,
-        parseFloat(formData.amount),
-        formData.date,
-        formData.method
-      );
-      resetForm();
-      loadData();
+      setIsSubmitting(true);
+      setErrorMessage('');
+      try {
+        await addPayment(
+          formData.orderId,
+          parseFloat(formData.amount),
+          formData.date,
+          formData.method,
+          {
+            hours: formData.hours ? parseFloat(formData.hours) : null,
+            comment: formData.comment,
+          }
+        );
+        resetForm();
+        await loadData();
+      } catch (error) {
+        setErrorMessage(error.message || 'Failed to log payment.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }
 
@@ -44,14 +78,31 @@ function PaymentTracker() {
       amount: '',
       date: new Date().toISOString().split('T')[0],
       method: 'Bank Transfer',
+      hours: '',
+      comment: '',
     });
     setShowForm(false);
   }
 
-  async function handleDelete(id) {
-    if (window.confirm('Are you sure you want to delete this payment?')) {
+  async function handleDeletePayment(id) {
+    if (readOnly || deletingPaymentId) return;
+    setConfirmDeletePaymentId(id);
+  }
+
+  async function confirmDeletePayment() {
+    if (!confirmDeletePaymentId) return;
+
+    const id = confirmDeletePaymentId;
+    setDeletingPaymentId(id);
+    setConfirmDeletePaymentId(null);
+    setErrorMessage('');
+    try {
       await deletePayment(id);
-      loadData();
+      await loadData();
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to delete payment.');
+    } finally {
+      setDeletingPaymentId(null);
     }
   }
 
@@ -63,10 +114,13 @@ function PaymentTracker() {
   return (
     <div className="payment-tracker">
       <div className="header">
-        <h2>Payment Tracker</h2>
+        <h2>Payments & Hours</h2>
         <button
+          type="button"
           className="btn-primary"
+          disabled={readOnly}
           onClick={() => {
+            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -76,6 +130,9 @@ function PaymentTracker() {
           {showForm ? 'Cancel' : 'Log Payment'}
         </button>
       </div>
+
+      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
+      {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       {showForm && (
         <form className="form" onSubmit={handleSubmit}>
@@ -139,8 +196,34 @@ function PaymentTracker() {
             </select>
           </div>
 
-          <button type="submit" className="btn-primary">
-            Log Payment
+          <div className="form-group">
+            <label>Hours (optional)</label>
+            <input
+              type="number"
+              value={formData.hours}
+              onChange={(e) =>
+                setFormData({ ...formData, hours: e.target.value })
+              }
+              placeholder="0.0"
+              step="0.25"
+              min="0"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Comment (optional)</label>
+            <textarea
+              value={formData.comment}
+              onChange={(e) =>
+                setFormData({ ...formData, comment: e.target.value })
+              }
+              placeholder="Add context for this payment or hours log"
+              rows="3"
+            />
+          </div>
+
+          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Log Payment'}
           </button>
         </form>
       )}
@@ -153,6 +236,8 @@ function PaymentTracker() {
               <th>Amount</th>
               <th>Date</th>
               <th>Method</th>
+              <th>Hours</th>
+              <th>Comment</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -163,15 +248,19 @@ function PaymentTracker() {
                 return (
                   <tr key={payment.id}>
                     <td>{orderInfo.clientName} - {orderInfo.type}</td>
-                    <td>${payment.amount.toFixed(2)}</td>
+                    <td>${Number(payment.amount || 0).toFixed(2)}</td>
                     <td>{payment.date}</td>
                     <td>{payment.method}</td>
+                    <td>{Number(payment.hours) > 0 ? Number(payment.hours) : '—'}</td>
+                    <td>{payment.comment || '—'}</td>
                     <td>
                       <button
+                        type="button"
                         className="btn-danger btn-small"
-                        onClick={() => handleDelete(payment.id)}
+                        disabled={readOnly || deletingPaymentId === payment.id}
+                        onClick={() => handleDeletePayment(payment.id)}
                       >
-                        Delete
+                        {deletingPaymentId === payment.id ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>
@@ -179,7 +268,7 @@ function PaymentTracker() {
               })
             ) : (
               <tr>
-                <td colSpan="5" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   No payments logged yet.
                 </td>
               </tr>
@@ -187,6 +276,16 @@ function PaymentTracker() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDeletePaymentId)}
+        title="Delete payment"
+        message="This payment record will be permanently removed."
+        confirmLabel="Delete payment"
+        danger
+        onConfirm={confirmDeletePayment}
+        onCancel={() => setConfirmDeletePaymentId(null)}
+      />
     </div>
   );
 }

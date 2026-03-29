@@ -1,103 +1,38 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { getSupabaseClient } from './supabase';
 
-// Simple in-memory demo data when Supabase is not configured.
-const demoOrders = [
-  {
-    id: 'ord-1',
-    clientName: 'Acme Corp',
-    type: 'Web App',
-    dateAccepted: '2024-05-01',
-    status: 'In Progress',
-    cost: 12000,
-  },
-  {
-    id: 'ord-2',
-    clientName: 'Globex',
-    type: 'Design',
-    dateAccepted: '2024-04-18',
-    status: 'Pending',
-    cost: 4500,
-  },
-];
+function formatDbError(error, fallbackMessage) {
+  if (!error) {
+    return fallbackMessage;
+  }
 
-const demoPayments = [
-  {
-    id: 'pay-1',
-    orderId: 'ord-1',
-    amount: 6000,
-    date: '2024-05-10',
-    method: 'Bank Transfer',
-  },
-];
-
-const demoHours = [
-  {
-    id: 'hrs-1',
-    orderId: 'ord-1',
-    hours: 18,
-    date: '2024-05-12',
-    notes: 'Initial build + wireframes',
-  },
-];
-
-const demoClients = [
-  {
-    id: 'cli-1',
-    businessName: 'Acme Corp',
-    contactPerson: 'John Smith',
-    email: 'john@acmecorp.com',
-    phone: '555-0100',
-    notes: 'Primary client, prefer email communication',
-  },
-  {
-    id: 'cli-2',
-    businessName: 'Globex',
-    contactPerson: 'Sarah Johnson',
-    email: 'sarah@globex.com',
-    phone: '555-0200',
-    notes: 'Regular design work',
-  },
-];
-
-const uid = () => `id-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`;
+  return error.message || fallbackMessage;
+}
 
 // Orders
 export async function addOrder(clientName, type, dateAccepted, status, cost) {
-  if (!isSupabaseConfigured) {
-    const order = { id: uid(), clientName, type, dateAccepted, status, cost: Number(cost) };
-    demoOrders.push(order);
-    return order;
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
     .insert([{ clientName, type, dateAccepted, status, cost }])
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to create order.'));
   return data;
 }
 
 export async function getOrders() {
-  if (!isSupabaseConfigured) {
-    return [...demoOrders];
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
     .select('*');
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to load orders.'));
   return data || [];
 }
 
 export async function updateOrder(id, clientName, type, dateAccepted, status, cost) {
-  if (!isSupabaseConfigured) {
-    const idx = demoOrders.findIndex((o) => o.id === id);
-    if (idx !== -1) {
-      demoOrders[idx] = { ...demoOrders[idx], clientName, type, dateAccepted, status, cost: Number(cost) };
-    }
-    return demoOrders[idx];
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
@@ -105,155 +40,105 @@ export async function updateOrder(id, clientName, type, dateAccepted, status, co
     .eq('id', id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to update order.'));
   return data;
 }
 
 export async function deleteOrder(id) {
-  if (!isSupabaseConfigured) {
-    const orderIdx = demoOrders.findIndex((o) => o.id === id);
-    if (orderIdx !== -1) demoOrders.splice(orderIdx, 1);
-    // Cascade delete related payments and hours
-    for (let i = demoPayments.length - 1; i >= 0; i -= 1) {
-      if (demoPayments[i].orderId === id) demoPayments.splice(i, 1);
-    }
-    for (let i = demoHours.length - 1; i >= 0; i -= 1) {
-      if (demoHours[i].orderId === id) demoHours.splice(i, 1);
-    }
-    return;
-  }
+  const supabase = getSupabaseClient();
+
+  // Keep application-level cascade explicit for reliability across environments.
+  const { error: paymentError } = await supabase
+    .from('payments')
+    .delete()
+    .eq('orderId', id);
+  if (paymentError) throw new Error(formatDbError(paymentError, 'Failed to remove related payments.'));
+
+  const { error: hoursError } = await supabase
+    .from('hours')
+    .delete()
+    .eq('orderId', id);
+  if (hoursError) throw new Error(formatDbError(hoursError, 'Failed to remove related hours entries.'));
 
   const { error } = await supabase
     .from('orders')
     .delete()
     .eq('id', id);
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to delete order.'));
 }
 
 // Payments
-export async function addPayment(orderId, amount, date, method) {
-  if (!isSupabaseConfigured) {
-    const payment = { id: uid(), orderId, amount: Number(amount), date, method };
-    demoPayments.push(payment);
-    return payment;
+export async function addPayment(orderId, amount, date, method, options = {}) {
+  const supabase = getSupabaseClient();
+
+  const { hours, comment } = options;
+  const normalizedHours = Number(hours);
+  const shouldStoreHours = Number.isFinite(normalizedHours) && normalizedHours > 0;
+
+  const paymentInsert = { orderId, amount, date, method };
+  if (typeof comment === 'string' && comment.trim()) {
+    paymentInsert.comment = comment.trim();
+  }
+  if (shouldStoreHours) {
+    paymentInsert.hours = normalizedHours;
   }
 
   const { data, error } = await supabase
     .from('payments')
-    .insert([{ orderId, amount, date, method }])
+    .insert([paymentInsert])
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to log payment.'));
+
   return data;
 }
 
 export async function getPayments() {
-  if (!isSupabaseConfigured) {
-    return [...demoPayments];
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('payments')
     .select('*');
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to load payments.'));
   return data || [];
 }
 
 export async function deletePayment(id) {
-  if (!isSupabaseConfigured) {
-    const idx = demoPayments.findIndex((p) => p.id === id);
-    if (idx !== -1) demoPayments.splice(idx, 1);
-    return;
-  }
+  const supabase = getSupabaseClient();
 
   const { error } = await supabase
     .from('payments')
     .delete()
     .eq('id', id);
-  if (error) throw error;
-}
-
-// Hours
-export async function addHours(orderId, hours, date, notes) {
-  if (!isSupabaseConfigured) {
-    const entry = { id: uid(), orderId, hours: Number(hours), date, notes };
-    demoHours.push(entry);
-    return entry;
-  }
-
-  const { data, error } = await supabase
-    .from('hours')
-    .insert([{ orderId, hours, date, notes }])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function getHours() {
-  if (!isSupabaseConfigured) {
-    return [...demoHours];
-  }
-
-  const { data, error } = await supabase
-    .from('hours')
-    .select('*');
-  if (error) throw error;
-  return data || [];
-}
-
-export async function deleteHours(id) {
-  if (!isSupabaseConfigured) {
-    const idx = demoHours.findIndex((h) => h.id === id);
-    if (idx !== -1) demoHours.splice(idx, 1);
-    return;
-  }
-
-  const { error } = await supabase
-    .from('hours')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to delete payment.'));
 }
 
 // Clients
 export async function addClient(businessName, contactPerson, email, phone, notes) {
-  if (!isSupabaseConfigured) {
-    const client = { id: uid(), businessName, contactPerson, email, phone, notes };
-    demoClients.push(client);
-    return client;
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('clients')
     .insert([{ businessName, contactPerson, email, phone, notes }])
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to create client.'));
   return data;
 }
 
 export async function getClients() {
-  if (!isSupabaseConfigured) {
-    return [...demoClients];
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('clients')
     .select('*')
     .order('businessName', { ascending: true });
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to load clients.'));
   return data || [];
 }
 
 export async function updateClient(id, businessName, contactPerson, email, phone, notes) {
-  if (!isSupabaseConfigured) {
-    const idx = demoClients.findIndex((c) => c.id === id);
-    if (idx !== -1) {
-      demoClients[idx] = { ...demoClients[idx], businessName, contactPerson, email, phone, notes };
-    }
-    return demoClients[idx];
-  }
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('clients')
@@ -261,20 +146,38 @@ export async function updateClient(id, businessName, contactPerson, email, phone
     .eq('id', id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to update client.'));
   return data;
 }
 
 export async function deleteClient(id) {
-  if (!isSupabaseConfigured) {
-    const idx = demoClients.findIndex((c) => c.id === id);
-    if (idx !== -1) demoClients.splice(idx, 1);
-    return;
+  const supabase = getSupabaseClient();
+
+  const { data: client, error: clientLookupError } = await supabase
+    .from('clients')
+    .select('businessName')
+    .eq('id', id)
+    .single();
+  if (clientLookupError) {
+    throw new Error(formatDbError(clientLookupError, 'Failed to verify client before delete.'));
+  }
+
+  const { data: relatedOrders, error: relatedOrdersError } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact' })
+    .eq('clientName', client.businessName);
+  if (relatedOrdersError) {
+    throw new Error(formatDbError(relatedOrdersError, 'Failed to check client orders before delete.'));
+  }
+
+  const relatedOrderCount = relatedOrders?.length || 0;
+  if (relatedOrderCount > 0) {
+    throw new Error(`Cannot delete this client because ${relatedOrderCount} related order${relatedOrderCount === 1 ? '' : 's'} still exist.`);
   }
 
   const { error } = await supabase
     .from('clients')
     .delete()
     .eq('id', id);
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error, 'Failed to delete client.'));
 }

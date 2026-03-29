@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { getClients, addClient, updateClient, deleteClient, getOrders } from '../services/dataService';
+import ConfirmDialog from './ConfirmDialog';
 import '../styles/forms.css';
 import '../styles/clients.css';
 
-function Clients() {
+function Clients({ readOnly = false }) {
   const [clients, setClients] = useState([]);
   const [orders, setOrders] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [formData, setFormData] = useState({
     businessName: '',
     contactPerson: '',
@@ -19,40 +24,65 @@ function Clients() {
   });
 
   useEffect(() => {
+    if (readOnly) {
+      setClients([]);
+      setOrders([]);
+      setShowForm(false);
+      setEditingId(null);
+      setSelectedClient(null);
+      return;
+    }
     loadData();
-  }, []);
+  }, [readOnly]);
 
   async function loadData() {
-    const clientsData = await getClients();
-    const ordersData = await getOrders();
-    setClients(clientsData);
-    setOrders(ordersData);
+    try {
+      const clientsData = await getClients();
+      const ordersData = await getOrders();
+      setClients(clientsData);
+      setOrders(ordersData);
+      setErrorMessage('');
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to load clients.');
+      setClients([]);
+      setOrders([]);
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (readOnly) return;
+
     if (formData.businessName && formData.contactPerson) {
-      if (editingId) {
-        await updateClient(
-          editingId,
-          formData.businessName,
-          formData.contactPerson,
-          formData.email,
-          formData.phone,
-          formData.notes
-        );
-        setEditingId(null);
-      } else {
-        await addClient(
-          formData.businessName,
-          formData.contactPerson,
-          formData.email,
-          formData.phone,
-          formData.notes
-        );
+      setIsSubmitting(true);
+      setErrorMessage('');
+      try {
+        if (editingId) {
+          await updateClient(
+            editingId,
+            formData.businessName,
+            formData.contactPerson,
+            formData.email,
+            formData.phone,
+            formData.notes
+          );
+          setEditingId(null);
+        } else {
+          await addClient(
+            formData.businessName,
+            formData.contactPerson,
+            formData.email,
+            formData.phone,
+            formData.notes
+          );
+        }
+        resetForm();
+        await loadData();
+      } catch (error) {
+        setErrorMessage(error.message || 'Failed to save client.');
+      } finally {
+        setIsSubmitting(false);
       }
-      resetForm();
-      loadData();
     }
   }
 
@@ -69,6 +99,7 @@ function Clients() {
   }
 
   function handleEdit(client) {
+    if (readOnly) return;
     setFormData({
       businessName: client.businessName,
       contactPerson: client.contactPerson,
@@ -82,12 +113,27 @@ function Clients() {
   }
 
   async function handleDelete(id) {
-    if (window.confirm('Are you sure you want to delete this client?')) {
+    if (readOnly || deletingId) return;
+    setConfirmDeleteId(id);
+  }
+
+  async function confirmDelete() {
+    if (!confirmDeleteId) return;
+
+    const id = confirmDeleteId;
+    setDeletingId(id);
+    setConfirmDeleteId(null);
+    setErrorMessage('');
+    try {
       await deleteClient(id);
       if (selectedClient?.id === id) {
         setSelectedClient(null);
       }
-      loadData();
+      await loadData();
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to delete client.');
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -120,8 +166,11 @@ function Clients() {
       <div className="header">
         <h2>Clients</h2>
         <button
+          type="button"
           className="btn-primary"
+          disabled={readOnly}
           onClick={() => {
+            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -132,6 +181,19 @@ function Clients() {
           {showForm ? 'Cancel' : 'Add Client'}
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDeleteId)}
+        title="Delete client"
+        message="This will permanently delete the client if there are no related orders."
+        confirmLabel="Delete client"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
+      {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       <div className="search-section">
         <input
@@ -193,8 +255,8 @@ function Clients() {
                 />
               </div>
 
-          <button type="submit" className="btn-primary">
-            {editingId ? 'Update Client' : 'Add Client'}
+          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+            {isSubmitting ? 'Saving...' : editingId ? 'Update Client' : 'Add Client'}
           </button>
         </form>
       )}
@@ -227,7 +289,9 @@ function Clients() {
                       <td>{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
                       <td>
                         <button
+                          type="button"
                           className="btn-secondary btn-small"
+                          disabled={readOnly || deletingId === client.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEdit(client);
@@ -236,13 +300,15 @@ function Clients() {
                           Edit
                         </button>
                         <button
+                          type="button"
                           className="btn-danger btn-small"
+                          disabled={readOnly || deletingId === client.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(client.id);
                           }}
                         >
-                          Delete
+                          {deletingId === client.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </td>
                     </tr>
@@ -262,7 +328,9 @@ function Clients() {
             <div className="client-details-header">
               <h3>{selectedClient.businessName}</h3>
               <button
+                type="button"
                 className="btn-secondary btn-small"
+                disabled={readOnly}
                 onClick={() => handleEdit(selectedClient)}
               >
                 Edit Contact Details

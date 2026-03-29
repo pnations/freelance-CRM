@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import Clients from './components/Clients';
 import OrderForm from './components/OrderForm';
 import PaymentTracker from './components/PaymentTracker';
-import HoursLogger from './components/HoursLogger';
+import { isSupabaseConfigured } from './services/supabase';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
-  
+  const isReadOnly = !isSupabaseConfigured;
 
   return (
     <div className="app">
       <div className="demo-banner">
         <span className="demo-badge">EARLY VERSION</span>
-        <span className="demo-text">You are using an early release of Freelance CRM. Core features are live, and more improvements are on the way.</span>
+        <span className="demo-text">
+          {isReadOnly
+            ? 'Supabase is not configured. The app is currently read-only until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
+            : 'You are using an early release of Freelance CRM. Core features are live, and more improvements are on the way.'}
+        </span>
       </div>
       <nav className="sidebar">
         <div className="sidebar-header">
@@ -54,23 +58,14 @@ function App() {
               Payments
             </button>
           </li>
-          <li>
-            <button
-              className={currentPage === 'hours' ? 'active' : ''}
-              onClick={() => setCurrentPage('hours')}
-            >
-              Hours
-            </button>
-          </li>
         </ul>
       </nav>
 
       <main className="main-content">
-        {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'clients' && <Clients />}
-        {currentPage === 'orders' && <OrderForm />}
-        {currentPage === 'payments' && <PaymentTracker />}
-        {currentPage === 'hours' && <HoursLogger />}
+        {currentPage === 'dashboard' && <Dashboard readOnly={isReadOnly} />}
+        {currentPage === 'clients' && <Clients readOnly={isReadOnly} />}
+        {currentPage === 'orders' && <OrderForm readOnly={isReadOnly} />}
+        {currentPage === 'payments' && <PaymentTracker readOnly={isReadOnly} />}
       </main>
     </div>
   );
