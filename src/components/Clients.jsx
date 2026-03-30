@@ -1,26 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { getClients, addClient, updateClient, deleteClient, getOrders } from '../services/dataService';
 import ConfirmDialog from './ConfirmDialog';
+import TableActions from './TableActions';
+import useConfirmDelete from '../hooks/useConfirmDelete';
+import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 import '../styles/clients.css';
 
 function Clients({ readOnly = false }) {
   const [clients, setClients] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [formData, setFormData] = useState({
+  const {
+    formData,
+    setFormData,
+    showForm,
+    setShowForm,
+    editingId,
+    setEditingId,
+    isSubmitting,
+    setIsSubmitting,
+    errorMessage,
+    setErrorMessage,
+    resetForm,
+  } = useCrudForm(() => ({
     businessName: '',
     contactPerson: '',
     email: '',
     phone: '',
     notes: '',
+  }));
+
+  const {
+    deletingId,
+    confirmDeleteId,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+  } = useConfirmDelete({
+    execute: deleteClient,
+    onSuccess: async (id) => {
+      if (selectedClient?.id === id) {
+        setSelectedClient(null);
+      }
+      await loadData();
+    },
+    onError: (error) => {
+      setErrorMessage(error.message || 'Failed to delete client.');
+    },
   });
 
   useEffect(() => {
@@ -86,18 +114,6 @@ function Clients({ readOnly = false }) {
     }
   }
 
-  function resetForm() {
-    setFormData({
-      businessName: '',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      notes: '',
-    });
-    setShowForm(false);
-    setEditingId(null);
-  }
-
   function handleEdit(client) {
     if (readOnly) return;
     setFormData({
@@ -113,28 +129,9 @@ function Clients({ readOnly = false }) {
   }
 
   async function handleDelete(id) {
-    if (readOnly || deletingId) return;
-    setConfirmDeleteId(id);
-  }
-
-  async function confirmDelete() {
-    if (!confirmDeleteId) return;
-
-    const id = confirmDeleteId;
-    setDeletingId(id);
-    setConfirmDeleteId(null);
+    if (readOnly) return;
     setErrorMessage('');
-    try {
-      await deleteClient(id);
-      if (selectedClient?.id === id) {
-        setSelectedClient(null);
-      }
-      await loadData();
-    } catch (error) {
-      setErrorMessage(error.message || 'Failed to delete client.');
-    } finally {
-      setDeletingId(null);
-    }
+    requestDelete(id);
   }
 
   function viewClientDetails(client) {
@@ -162,9 +159,9 @@ function Clients({ readOnly = false }) {
   }
 
   return (
-    <div className="clients-page order-form">
-      <div className="header">
-        <h2>Clients</h2>
+    <div className="clients-page page-container">
+      <div className="page-header">
+        <h2 className="page-title">Clients</h2>
         <button
           type="button"
           className="btn-primary"
@@ -189,7 +186,7 @@ function Clients({ readOnly = false }) {
         confirmLabel="Delete client"
         danger
         onConfirm={confirmDelete}
-        onCancel={() => setConfirmDeleteId(null)}
+        onCancel={cancelDelete}
       />
 
       {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
@@ -282,34 +279,19 @@ function Clients({ readOnly = false }) {
                       className={selectedClient?.id === client.id ? 'selected-row' : ''}
                       onClick={() => viewClientDetails(client)}
                     >
-                      <td>{client.businessName}</td>
-                      <td>{client.contactPerson}</td>
-                      <td>{client.email || '—'}</td>
-                      <td>{client.phone || '—'}</td>
-                      <td>{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-small"
-                          disabled={readOnly || deletingId === client.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(client);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-danger btn-small"
-                          disabled={readOnly || deletingId === client.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(client.id);
-                          }}
-                        >
-                          {deletingId === client.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                      <td data-label="Business">{client.businessName}</td>
+                      <td data-label="Contact">{client.contactPerson}</td>
+                      <td data-label="Email">{client.email || '—'}</td>
+                      <td data-label="Phone">{client.phone || '—'}</td>
+                      <td data-label="Projects">{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
+                      <td data-label="Actions" className="actions-cell">
+                        <TableActions
+                          onEdit={() => handleEdit(client)}
+                          onDelete={() => handleDelete(client.id)}
+                          readOnly={readOnly}
+                          isDeleting={deletingId === client.id}
+                          stopPropagation
+                        />
                       </td>
                     </tr>
                   );
@@ -382,14 +364,14 @@ function Clients({ readOnly = false }) {
                       <tbody>
                         {getClientProjects(selectedClient.businessName).map((project) => (
                           <tr key={project.id}>
-                            <td>{project.type}</td>
-                            <td>{new Date(project.dateAccepted).toLocaleDateString()}</td>
-                            <td>
+                            <td data-label="Project Type">{project.type}</td>
+                            <td data-label="Date Accepted">{new Date(project.dateAccepted).toLocaleDateString()}</td>
+                            <td data-label="Status">
                               <span className={`status-badge status-${project.status.toLowerCase().replace(' ', '-')}`}>
                                 {project.status}
                               </span>
                             </td>
-                            <td>${Number(project.cost).toLocaleString()}</td>
+                            <td data-label="Cost">${Number(project.cost).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>

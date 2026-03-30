@@ -21,40 +21,6 @@
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
 }
 
-.clients-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-}
-
-.clients-list-section {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.client-form {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-}
-
-.client-form h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
-
 .clients-page table tbody tr {
   cursor: pointer;
 }
@@ -62,79 +28,6 @@
 .clients-page .selected-row {
   background-color: var(--color-background);
   box-shadow: inset 3px 0 0 var(--color-primary);
-}
-
-.table-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.clients-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
-
-.client-card {
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  padding: 20px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.client-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  border-color: var(--color-primary-light);
-}
-
-.client-card.selected {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-}
-
-.client-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  gap: 12px;
-}
-
-.client-card-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text);
-  flex: 1;
-}
-
-.client-card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.client-card-body p {
-  margin: 6px 0;
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.client-card-body p strong {
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.project-count {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-primary) !important;
-  font-weight: 600 !important;
 }
 
 .client-details-panel {
@@ -224,59 +117,10 @@
   margin-top: 16px;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-pending {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-in-progress {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.status-completed {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-cancelled {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-@media (min-width: 1024px) {
-  .clients-layout {
-    grid-template-columns: 1fr 500px;
-  }
-}
-
 @media (max-width: 768px) {
-  .clients-grid {
-    grid-template-columns: 1fr;
-  }
-
   .search-input {
     width: 100%;
     max-width: none;
-  }
-
-  .client-card-header {
-    flex-direction: column;
-  }
-
-  .client-card-actions {
-    width: 100%;
-    justify-content: flex-end;
   }
 
   .info-grid {

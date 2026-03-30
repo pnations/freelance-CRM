@@ -1,22 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { getOrders, addOrder, updateOrder, deleteOrder } from '../services/dataService';
 import ConfirmDialog from './ConfirmDialog';
+import TableActions from './TableActions';
+import useConfirmDelete from '../hooks/useConfirmDelete';
+import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
 function OrderForm({ readOnly = false }) {
   const [orders, setOrders] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [formData, setFormData] = useState({
+  const {
+    formData,
+    setFormData,
+    showForm,
+    setShowForm,
+    editingId,
+    setEditingId,
+    isSubmitting,
+    setIsSubmitting,
+    errorMessage,
+    setErrorMessage,
+    resetForm,
+  } = useCrudForm(() => ({
     clientName: '',
     type: '',
     dateAccepted: '',
     status: 'Pending',
     cost: '',
+  }));
+
+  const {
+    deletingId,
+    confirmDeleteId,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+  } = useConfirmDelete({
+    execute: deleteOrder,
+    onSuccess: async () => {
+      await loadData();
+    },
+    onError: (error) => {
+      setErrorMessage(error.message || 'Failed to delete order.');
+    },
   });
 
   useEffect(() => {
@@ -77,17 +102,6 @@ function OrderForm({ readOnly = false }) {
     }
   }
 
-  function resetForm() {
-    setFormData({
-      clientName: '',
-      type: '',
-      dateAccepted: '',
-      status: 'Pending',
-      cost: '',
-    });
-    setShowForm(false);
-  }
-
   function handleEdit(order) {
     if (readOnly) return;
     setFormData(order);
@@ -96,31 +110,15 @@ function OrderForm({ readOnly = false }) {
   }
 
   async function handleDelete(id) {
-    if (readOnly || deletingId) return;
-    setConfirmDeleteId(id);
-  }
-
-  async function confirmDelete() {
-    if (!confirmDeleteId) return;
-
-    const id = confirmDeleteId;
-    setDeletingId(id);
-    setConfirmDeleteId(null);
+    if (readOnly) return;
     setErrorMessage('');
-    try {
-      await deleteOrder(id);
-      await loadData();
-    } catch (error) {
-      setErrorMessage(error.message || 'Failed to delete order.');
-    } finally {
-      setDeletingId(null);
-    }
+    requestDelete(id);
   }
 
   return (
-    <div className="order-form">
-      <div className="header">
-        <h2>Orders</h2>
+    <div className="order-form page-container">
+      <div className="page-header">
+        <h2 className="page-title">Orders</h2>
         <button
           type="button"
           className="btn-primary"
@@ -230,32 +228,22 @@ function OrderForm({ readOnly = false }) {
             {orders.length > 0 ? (
               orders.map((order) => (
                 <tr key={order.id}>
-                  <td>{order.clientName}</td>
-                  <td>{order.type}</td>
-                  <td>{order.dateAccepted}</td>
-                  <td>
+                  <td data-label="Client">{order.clientName}</td>
+                  <td data-label="Type">{order.type}</td>
+                  <td data-label="Date Accepted">{order.dateAccepted}</td>
+                  <td data-label="Status">
                     <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td>${Number(order.cost || 0).toFixed(2)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn-secondary btn-small"
-                      disabled={readOnly || deletingId === order.id}
-                      onClick={() => handleEdit(order)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-danger btn-small"
-                      disabled={readOnly || deletingId === order.id}
-                      onClick={() => handleDelete(order.id)}
-                    >
-                      {deletingId === order.id ? 'Deleting...' : 'Delete'}
-                    </button>
+                  <td data-label="Cost">${Number(order.cost || 0).toFixed(2)}</td>
+                  <td data-label="Actions" className="actions-cell">
+                    <TableActions
+                      onEdit={() => handleEdit(order)}
+                      onDelete={() => handleDelete(order.id)}
+                      readOnly={readOnly}
+                      isDeleting={deletingId === order.id}
+                    />
                   </td>
                 </tr>
               ))
@@ -277,7 +265,7 @@ function OrderForm({ readOnly = false }) {
         confirmLabel="Delete order"
         danger
         onConfirm={confirmDelete}
-        onCancel={() => setConfirmDeleteId(null)}
+        onCancel={cancelDelete}
       />
     </div>
   );

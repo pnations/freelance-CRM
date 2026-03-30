@@ -22,8 +22,15 @@ dashboard/
 │   ├── components
 │   │   ├── Dashboard.jsx
 │   │   ├── Clients.jsx
+│   │   ├── ConfirmDialog.jsx
+│   │   ├── Navigation.jsx
 │   │   ├── OrderForm.jsx
-│   │   └── PaymentTracker.jsx
+│   │   ├── PaymentTracker.jsx
+│   │   └── TableActions.jsx
+│   │
+│   ├── hooks
+│   │   ├── useConfirmDelete.js
+│   │   └── useCrudForm.js
 │   │
 │   ├── services
 │   │   ├── supabase.js
@@ -31,6 +38,7 @@ dashboard/
 │   │
 │   ├── styles
 │   │   ├── dashboard.css
+│   │   ├── clients.css
 │   │   └── forms.css
 │   │
 │   ├── App.jsx
@@ -62,17 +70,25 @@ dashboard/
 ## React Components
 - Dashboard.jsx — metrics overview and data table fed by Supabase data
 - Clients.jsx — create, update, and delete client records and view related projects
+- ConfirmDialog.jsx — shared in-app confirmation modal for destructive actions
+- Navigation.jsx — mobile-first sidebar/drawer navigation with hamburger controls
 - OrderForm.jsx — create, update, and delete orders
 - PaymentTracker.jsx — log payments with optional hours/comments and manage a unified payments log
+- TableActions.jsx — reusable row action buttons (edit/delete) with loading/disabled states
+
+## Hooks
+- useConfirmDelete.js — shared delete confirmation workflow with async state handling
+- useCrudForm.js — shared form state helper for CRUD pages (form state, edit mode, submit state)
 
 ## Services
 - supabase.js — initializes the Supabase client from environment variables
-- dataService.js — CRUD helpers for `clients`, `orders`, `payments`, and `hours` tables
+- dataService.js — CRUD helpers for `clients`, `orders`, `payments`, and `hours` table compatibility
 
 ## Styling
-- App.css — layout and navigation styling
-- dashboard.css — metrics grid, filters, and table styling
-- forms.css — shared form, input, button, and responsive rules
+- App.css — mobile-first app shell, banner, and drawer/sidebar navigation styling
+- dashboard.css — dashboard metrics and filters styling
+- clients.css — Clients-specific detail panel and search styling
+- forms.css — shared page, form, table, button, status badge, and responsive rules
 
 ## Entry Points
 - index.html — base HTML shell for Vite
@@ -82,5 +98,5 @@ dashboard/
 ## Data Flow (Supabase)
 
 ```
-Component → dataService.js → Supabase tables (clients, orders, payments, hours) → component render
+Component → hooks/components helpers → dataService.js → Supabase tables (clients, orders, payments, hours) → component render
 ```

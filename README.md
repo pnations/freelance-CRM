@@ -12,6 +12,7 @@ A lightweight, professional CRM dashboard for managing freelance clients, orders
 - **Order Management** - Create and track orders with client name, project type, status, and cost
 - **Payments & Hours** - Log payments with optional hours and comments in one unified logged table
 - **Advanced Filtering** - Filter orders by status, client name, and project type
+- **Mobile-First Navigation** - Hamburger drawer on small screens with desktop sidebar on larger screens
 - **Professional UI** - Clean, responsive design with teal color scheme and smooth interactions
 - **Read-Only Fallback** - When Supabase is not configured, the app stays accessible in read-only mode
 - **Responsive Design** - Fully responsive on desktop, tablet, and mobile devices
@@ -66,7 +67,15 @@ The app runs in Supabase-only mode. If Supabase environment variables are missin
 
 ## Future Roadmap
 
-- [ ] Supabase integration for persistent data storage
+### Recently Completed
+
+- [x] Supabase-backed persistent data
+- [x] Mobile-first navigation with hamburger drawer
+- [x] Shared CRUD hooks and reusable action components
+- [x] Unified Payments + Hours logging workflow
+
+### Up Next
+
 - [ ] User authentication and login
 - [ ] AI-powered insights and recommendations
 - [ ] Dark mode toggle
@@ -106,8 +115,14 @@ src/
 ├── components/
 │   ├── Dashboard.jsx
 │   ├── Clients.jsx
+│   ├── ConfirmDialog.jsx
+│   ├── Navigation.jsx
 │   ├── OrderForm.jsx
-│   └── PaymentTracker.jsx
+│   ├── PaymentTracker.jsx
+│   └── TableActions.jsx
+├── hooks/
+│   ├── useConfirmDelete.js
+│   └── useCrudForm.js
 ├── services/
 │   ├── dataService.js (data management)
 │   └── supabase.js (Supabase config)
@@ -120,6 +135,12 @@ src/
 ├── index.css
 └── main.jsx
 ```
+
+### Architecture Notes
+
+- Mobile-first app shell with drawer navigation is implemented via `App.jsx`, `App.css`, and `components/Navigation.jsx`.
+- Shared CRUD behavior is centralized in `hooks/useConfirmDelete.js` and `hooks/useCrudForm.js`.
+- Shared action buttons and confirmation UX are centralized in `components/TableActions.jsx` and `components/ConfirmDialog.jsx`.
 
 ## Color Scheme
 

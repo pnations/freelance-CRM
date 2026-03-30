@@ -58,18 +58,12 @@
   min-height: 100px;
 }
 
-.order-form,
-.payment-tracker,
-.hours-logger,
-.clients-page {
+.page-container {
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.order-form .header,
-.payment-tracker .header,
-.hours-logger .header,
-.clients-page .header {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -78,10 +72,7 @@
   gap: 16px;
 }
 
-.order-form h2,
-.payment-tracker h2,
-.hours-logger h2,
-.clients-page h2 {
+.page-title {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
@@ -96,10 +87,7 @@
   color: var(--color-text);
 }
 
-.order-form .table,
-.payment-tracker .table,
-.hours-logger .table,
-.clients-page .table {
+.table {
   width: 100%;
   border-collapse: collapse;
   background-color: var(--color-surface);
@@ -119,17 +107,11 @@
   min-width: 680px;
 }
 
-.order-form table thead,
-.payment-tracker table thead,
-.hours-logger table thead,
-.clients-page table thead {
+.table thead {
   background-color: var(--color-background);
 }
 
-.order-form table th,
-.payment-tracker table th,
-.hours-logger table th,
-.clients-page table th {
+.table th {
   padding: 16px 24px;
   text-align: left;
   font-weight: 600;
@@ -140,34 +122,22 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.order-form table td,
-.payment-tracker table td,
-.hours-logger table td,
-.clients-page table td {
+.table td {
   padding: 16px 24px;
   border-bottom: 1px solid var(--color-border);
   font-size: 14px;
   color: var(--color-text);
 }
 
-.order-form table tbody tr,
-.payment-tracker table tbody tr,
-.hours-logger table tbody tr,
-.clients-page table tbody tr {
+.table tbody tr {
   transition: background-color 0.15s ease;
 }
 
-.order-form table tbody tr:hover,
-.payment-tracker table tbody tr:hover,
-.hours-logger table tbody tr:hover,
-.clients-page table tbody tr:hover {
+.table tbody tr:hover {
   background-color: var(--color-background);
 }
 
-.order-form table tbody tr:last-child td,
-.payment-tracker table tbody tr:last-child td,
-.hours-logger table tbody tr:last-child td,
-.clients-page table tbody tr:last-child td {
+.table tbody tr:last-child td {
   border-bottom: none;
 }
 
@@ -177,6 +147,47 @@
   font-style: italic;
   padding: 48px !important;
   font-size: 14px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-in-progress {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-invoiced {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.status-paid {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .error-banner {
@@ -310,29 +321,78 @@
     padding: 18px;
   }
 
-  .order-form .header,
-  .payment-tracker .header,
-  .hours-logger .header,
-  .clients-page .header {
+  .table-wrapper .table {
+    min-width: 0;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    border-bottom: 1px solid var(--color-border);
+    padding: 6px 0;
+  }
+
+  .table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .table td {
+    border-bottom: none;
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: start;
+    gap: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+
+  .table td.actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .table td.actions-cell::before,
+  .table td.empty-state::before {
+    display: none;
+  }
+
+  .table td.empty-state {
+    display: block;
+    text-align: center;
+  }
+
+  .page-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .order-form h2,
-  .payment-tracker h2,
-  .hours-logger h2,
-  .clients-page h2 {
+  .page-title {
     font-size: 22px;
   }
 
-  .order-form table th,
-  .payment-tracker table th,
-  .hours-logger table th,
-  .clients-page table th,
-  .order-form table td,
-  .payment-tracker table td,
-  .hours-logger table td,
-  .clients-page table td {
+  .table th,
+  .table td {
     padding: 12px 16px;
   }
 
@@ -349,36 +409,21 @@
 }
 
 @media (max-width: 768px) {
-  .order-form .header,
-  .payment-tracker .header,
-  .hours-logger .header,
-  .clients-page .header {
+  .page-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .order-form table,
-  .payment-tracker table,
-  .hours-logger table,
-  .clients-page table {
+  .table {
     font-size: 13px;
   }
 
-  .order-form table th,
-  .payment-tracker table th,
-  .hours-logger table th,
-  .clients-page table th,
-  .order-form table td,
-  .payment-tracker table td,
-  .hours-logger table td,
-  .clients-page table td {
+  .table th,
+  .table td {
     padding: 12px 16px;
   }
 
-  .order-form h2,
-  .payment-tracker h2,
-  .hours-logger h2,
-  .clients-page h2 {
+  .page-title {
     font-size: 24px;
   }
 }

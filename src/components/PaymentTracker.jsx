@@ -1,23 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { getPayments, getOrders, addPayment, deletePayment } from '../services/dataService';
 import ConfirmDialog from './ConfirmDialog';
+import TableActions from './TableActions';
+import useConfirmDelete from '../hooks/useConfirmDelete';
+import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
 function PaymentTracker({ readOnly = false }) {
   const [payments, setPayments] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
-  const [confirmDeletePaymentId, setConfirmDeletePaymentId] = useState(null);
-  const [formData, setFormData] = useState({
+  const {
+    formData,
+    setFormData,
+    showForm,
+    setShowForm,
+    isSubmitting,
+    setIsSubmitting,
+    errorMessage,
+    setErrorMessage,
+    resetForm,
+  } = useCrudForm(() => ({
     orderId: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     method: 'Bank Transfer',
     hours: '',
     comment: '',
+  }));
+
+  const {
+    deletingId: deletingPaymentId,
+    confirmDeleteId: confirmDeletePaymentId,
+    requestDelete,
+    cancelDelete,
+    confirmDelete: confirmDeletePayment,
+  } = useConfirmDelete({
+    execute: deletePayment,
+    onSuccess: async () => {
+      await loadData();
+    },
+    onError: (error) => {
+      setErrorMessage(error.message || 'Failed to delete payment.');
+    },
   });
 
   useEffect(() => {
@@ -72,38 +96,10 @@ function PaymentTracker({ readOnly = false }) {
     }
   }
 
-  function resetForm() {
-    setFormData({
-      orderId: '',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      method: 'Bank Transfer',
-      hours: '',
-      comment: '',
-    });
-    setShowForm(false);
-  }
-
   async function handleDeletePayment(id) {
-    if (readOnly || deletingPaymentId) return;
-    setConfirmDeletePaymentId(id);
-  }
-
-  async function confirmDeletePayment() {
-    if (!confirmDeletePaymentId) return;
-
-    const id = confirmDeletePaymentId;
-    setDeletingPaymentId(id);
-    setConfirmDeletePaymentId(null);
+    if (readOnly) return;
     setErrorMessage('');
-    try {
-      await deletePayment(id);
-      await loadData();
-    } catch (error) {
-      setErrorMessage(error.message || 'Failed to delete payment.');
-    } finally {
-      setDeletingPaymentId(null);
-    }
+    requestDelete(id);
   }
 
   function getOrderInfo(orderId) {
@@ -112,9 +108,9 @@ function PaymentTracker({ readOnly = false }) {
   }
 
   return (
-    <div className="payment-tracker">
-      <div className="header">
-        <h2>Payments & Hours</h2>
+    <div className="payment-tracker page-container">
+      <div className="page-header">
+        <h2 className="page-title">Payments & Hours</h2>
         <button
           type="button"
           className="btn-primary"
@@ -247,21 +243,18 @@ function PaymentTracker({ readOnly = false }) {
                 const orderInfo = getOrderInfo(payment.orderId);
                 return (
                   <tr key={payment.id}>
-                    <td>{orderInfo.clientName} - {orderInfo.type}</td>
-                    <td>${Number(payment.amount || 0).toFixed(2)}</td>
-                    <td>{payment.date}</td>
-                    <td>{payment.method}</td>
-                    <td>{Number(payment.hours) > 0 ? Number(payment.hours) : '—'}</td>
-                    <td>{payment.comment || '—'}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn-danger btn-small"
-                        disabled={readOnly || deletingPaymentId === payment.id}
-                        onClick={() => handleDeletePayment(payment.id)}
-                      >
-                        {deletingPaymentId === payment.id ? 'Deleting...' : 'Delete'}
-                      </button>
+                    <td data-label="Order">{orderInfo.clientName} - {orderInfo.type}</td>
+                    <td data-label="Amount">${Number(payment.amount || 0).toFixed(2)}</td>
+                    <td data-label="Date">{payment.date}</td>
+                    <td data-label="Method">{payment.method}</td>
+                    <td data-label="Hours">{Number(payment.hours) > 0 ? Number(payment.hours) : '—'}</td>
+                    <td data-label="Comment">{payment.comment || '—'}</td>
+                    <td data-label="Actions" className="actions-cell">
+                      <TableActions
+                        onDelete={() => handleDeletePayment(payment.id)}
+                        readOnly={readOnly}
+                        isDeleting={deletingPaymentId === payment.id}
+                      />
                     </td>
                   </tr>
                 );
@@ -284,7 +277,7 @@ function PaymentTracker({ readOnly = false }) {
         confirmLabel="Delete payment"
         danger
         onConfirm={confirmDeletePayment}
-        onCancel={() => setConfirmDeletePaymentId(null)}
+        onCancel={cancelDelete}
       />
     </div>
   );

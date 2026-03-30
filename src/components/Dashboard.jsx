@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getOrders, getPayments } from '../services/dataService';
+import '../styles/forms.css';
 import '../styles/dashboard.css';
 
 function Dashboard({ readOnly = false }) {
@@ -86,8 +87,8 @@ function Dashboard({ readOnly = false }) {
   const clientNames = ['All', ...new Set(orders.map((o) => o.clientName))];
 
   return (
-    <div className="dashboard">
-      <h2>Dashboard Overview</h2>
+    <div className="dashboard page-container">
+      <h2 className="page-title">Dashboard Overview</h2>
       {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable data operations.</p>}
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
@@ -151,7 +152,7 @@ function Dashboard({ readOnly = false }) {
       <div className="orders-table">
         <h3>Orders ({filteredOrders.length})</h3>
         <div className="table-wrapper">
-          <table>
+          <table className="table">
             <thead>
               <tr>
                 <th>Client Name</th>
