@@ -6,7 +6,7 @@ import useConfirmDelete from '../hooks/useConfirmDelete';
 import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
-function OrderForm({ readOnly = false }) {
+function OrderForm() {
   const [orders, setOrders] = useState([]);
   const {
     formData,
@@ -45,14 +45,8 @@ function OrderForm({ readOnly = false }) {
   });
 
   useEffect(() => {
-    if (readOnly) {
-      setOrders([]);
-      setShowForm(false);
-      setEditingId(null);
-      return;
-    }
     loadData();
-  }, [readOnly]);
+  }, []);
 
   async function loadData() {
     try {
@@ -67,7 +61,6 @@ function OrderForm({ readOnly = false }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (readOnly) return;
 
     if (formData.clientName && formData.type && formData.dateAccepted && formData.cost) {
       setIsSubmitting(true);
@@ -103,14 +96,12 @@ function OrderForm({ readOnly = false }) {
   }
 
   function handleEdit(order) {
-    if (readOnly) return;
     setFormData(order);
     setEditingId(order.id);
     setShowForm(true);
   }
 
   async function handleDelete(id) {
-    if (readOnly) return;
     setErrorMessage('');
     requestDelete(id);
   }
@@ -122,9 +113,7 @@ function OrderForm({ readOnly = false }) {
         <button
           type="button"
           className="btn-primary"
-          disabled={readOnly}
           onClick={() => {
-            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -135,7 +124,6 @@ function OrderForm({ readOnly = false }) {
         </button>
       </div>
 
-      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       {showForm && (
@@ -206,7 +194,7 @@ function OrderForm({ readOnly = false }) {
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : editingId ? 'Update Order' : 'Add Order'}
           </button>
         </form>
@@ -241,7 +229,6 @@ function OrderForm({ readOnly = false }) {
                     <TableActions
                       onEdit={() => handleEdit(order)}
                       onDelete={() => handleDelete(order.id)}
-                      readOnly={readOnly}
                       isDeleting={deletingId === order.id}
                     />
                   </td>

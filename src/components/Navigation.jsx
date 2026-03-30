@@ -7,6 +7,7 @@ function Navigation({
   onToggleNav,
   onCloseNav,
   onPageChange,
+  statusMessage,
 }) {
   return (
     <>
@@ -23,6 +24,7 @@ function Navigation({
           <span />
         </button>
         <span className="demo-badge">EARLY VERSION</span>
+        <span className="demo-text" role="status">{statusMessage}</span>
       </div>
 
       <button

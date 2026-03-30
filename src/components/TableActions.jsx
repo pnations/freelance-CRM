@@ -6,7 +6,6 @@ function TableActions({
   canEdit = true,
   canDelete = true,
   isDeleting = false,
-  readOnly = false,
   stopPropagation = false,
 }) {
   function handleClick(handler) {
@@ -24,7 +23,7 @@ function TableActions({
         <button
           type="button"
           className="btn-secondary btn-small"
-          disabled={readOnly || !canEdit || isDeleting}
+          disabled={!canEdit || isDeleting}
           onClick={handleClick(onEdit)}
         >
           Edit
@@ -34,7 +33,7 @@ function TableActions({
         <button
           type="button"
           className="btn-danger btn-small"
-          disabled={readOnly || !canDelete || isDeleting}
+          disabled={!canDelete || isDeleting}
           onClick={handleClick(onDelete)}
         >
           {isDeleting ? 'Deleting...' : 'Delete'}

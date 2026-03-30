@@ -2,24 +2,18 @@
 
 ```
 dashboard/
-├── Documentation
-│   ├── README.md
-│   ├── QUICK_START.md
-│   ├── DEPLOYMENT.md
-│   ├── IMPLEMENTATION_SUMMARY.md
-│   ├── START_HERE.md
-│   ├── DOCUMENTATION_INDEX.md
-│   ├── PROJECT_SUMMARY.txt
-│   └── FILE_STRUCTURE.md
-│
-├── Configuration
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── .env                (local only, not committed)
-│   └── .env.example        (sample env values)
-│
-├── src
-│   ├── components
+├── README.md
+├── FILE_STRUCTURE.md
+├── package.json
+├── package-lock.json
+├── vite.config.js
+├── .env                (local only, not committed)
+├── .env.example        (sample env values)
+├── supabase/
+│   └── migrations/
+│       └── 20260327_add_payments_hours_comment.sql
+├── src/
+│   ├── components/
 │   │   ├── Dashboard.jsx
 │   │   ├── Clients.jsx
 │   │   ├── ConfirmDialog.jsx
@@ -27,45 +21,39 @@ dashboard/
 │   │   ├── OrderForm.jsx
 │   │   ├── PaymentTracker.jsx
 │   │   └── TableActions.jsx
-│   │
-│   ├── hooks
+│   ├── hooks/
 │   │   ├── useConfirmDelete.js
 │   │   └── useCrudForm.js
-│   │
-│   ├── services
+│   ├── services/
 │   │   ├── supabase.js
 │   │   └── dataService.js
-│   │
-│   ├── styles
+│   ├── styles/
 │   │   ├── dashboard.css
 │   │   ├── clients.css
 │   │   └── forms.css
-│   │
 │   ├── App.jsx
 │   ├── App.css
 │   ├── index.css
 │   └── main.jsx
-│
 ├── index.html
+├── dist/ (generated)
 └── node_modules/ (generated)
 ```
 
 ## Documentation
 - README.md — full overview, setup, and usage
-- QUICK_START.md — fastest path to run the app
-- DEPLOYMENT.md — Supabase + frontend deployment guidance
-- IMPLEMENTATION_SUMMARY.md — what is built and open items
-- START_HERE.md — orientation and pointers to key docs
-- DOCUMENTATION_INDEX.md — doc map
-- PROJECT_SUMMARY.txt — short project description
 - FILE_STRUCTURE.md — this file
 
 ## Configuration
 - package.json — React/Vite dependencies and npm scripts
+- package-lock.json — npm lockfile for reproducible installs
 - vite.config.js — Vite build config
 - .env — local environment variables (not checked in)
 - .env.example — sample values for onboarding (uses Supabase)
 - Required env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+
+## Database Migrations
+- supabase/migrations/20260327_add_payments_hours_comment.sql — adds payments.hours and payments.comment columns
 
 ## React Components
 - Dashboard.jsx — metrics overview and data table fed by Supabase data

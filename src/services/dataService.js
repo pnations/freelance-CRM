@@ -58,7 +58,10 @@ export async function deleteOrder(id) {
     .from('hours')
     .delete()
     .eq('orderId', id);
-  if (hoursError) throw new Error(formatDbError(hoursError, 'Failed to remove related hours entries.'));
+  // Some environments no longer include the legacy hours table.
+  if (hoursError && hoursError.code !== '42P01') {
+    throw new Error(formatDbError(hoursError, 'Failed to remove related hours entries.'));
+  }
 
   const { error } = await supabase
     .from('orders')

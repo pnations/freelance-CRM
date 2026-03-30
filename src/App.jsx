@@ -5,12 +5,10 @@ import Clients from './components/Clients';
 import OrderForm from './components/OrderForm';
 import PaymentTracker from './components/PaymentTracker';
 import Navigation from './components/Navigation';
-import { isSupabaseConfigured } from './services/supabase';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const isReadOnly = !isSupabaseConfigured;
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -36,7 +34,7 @@ function App() {
   }
 
   return (
-    <div className={`app ${isNavOpen ? 'nav-open' : ''}`}>
+    <div className="app">
       <Navigation
         navItems={navItems}
         currentPage={currentPage}
@@ -44,19 +42,14 @@ function App() {
         onToggleNav={() => setIsNavOpen((open) => !open)}
         onCloseNav={() => setIsNavOpen(false)}
         onPageChange={handlePageChange}
+        statusMessage="You are using an early release of Freelance CRM. Core features are live, and more improvements are on the way."
       />
 
-      <div className="demo-status-message" role="status">
-        {isReadOnly
-          ? 'Supabase is not configured. The app is currently read-only until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
-          : 'You are using an early release of Freelance CRM. Core features are live, and more improvements are on the way.'}
-      </div>
-
       <main className="main-content">
-        {currentPage === 'dashboard' && <Dashboard readOnly={isReadOnly} />}
-        {currentPage === 'clients' && <Clients readOnly={isReadOnly} />}
-        {currentPage === 'orders' && <OrderForm readOnly={isReadOnly} />}
-        {currentPage === 'payments' && <PaymentTracker readOnly={isReadOnly} />}
+        {currentPage === 'dashboard' && <Dashboard />}
+        {currentPage === 'clients' && <Clients />}
+        {currentPage === 'orders' && <OrderForm />}
+        {currentPage === 'payments' && <PaymentTracker />}
       </main>
     </div>
   );

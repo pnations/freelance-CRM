@@ -14,7 +14,6 @@ A lightweight, professional CRM dashboard for managing freelance clients, orders
 - **Advanced Filtering** - Filter orders by status, client name, and project type
 - **Mobile-First Navigation** - Hamburger drawer on small screens with desktop sidebar on larger screens
 - **Professional UI** - Clean, responsive design with teal color scheme and smooth interactions
-- **Read-Only Fallback** - When Supabase is not configured, the app stays accessible in read-only mode
 - **Responsive Design** - Fully responsive on desktop, tablet, and mobile devices
 
 ## Tech Stack
@@ -63,7 +62,7 @@ npm run preview
 
 ## Data Mode
 
-The app runs in Supabase-only mode. If Supabase environment variables are missing, the UI stays available in read-only mode and write actions are disabled.
+The app runs in Supabase-only mode and requires valid Supabase environment variables. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` before running the app.
 
 ## Future Roadmap
 

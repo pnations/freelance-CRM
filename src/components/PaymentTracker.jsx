@@ -6,7 +6,7 @@ import useConfirmDelete from '../hooks/useConfirmDelete';
 import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
-function PaymentTracker({ readOnly = false }) {
+function PaymentTracker() {
   const [payments, setPayments] = useState([]);
   const [orders, setOrders] = useState([]);
   const {
@@ -45,14 +45,8 @@ function PaymentTracker({ readOnly = false }) {
   });
 
   useEffect(() => {
-    if (readOnly) {
-      setPayments([]);
-      setOrders([]);
-      setShowForm(false);
-      return;
-    }
     loadData();
-  }, [readOnly]);
+  }, []);
 
   async function loadData() {
     try {
@@ -70,7 +64,6 @@ function PaymentTracker({ readOnly = false }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (readOnly) return;
 
     if (formData.orderId && formData.amount && formData.date) {
       setIsSubmitting(true);
@@ -97,7 +90,6 @@ function PaymentTracker({ readOnly = false }) {
   }
 
   async function handleDeletePayment(id) {
-    if (readOnly) return;
     setErrorMessage('');
     requestDelete(id);
   }
@@ -114,9 +106,7 @@ function PaymentTracker({ readOnly = false }) {
         <button
           type="button"
           className="btn-primary"
-          disabled={readOnly}
           onClick={() => {
-            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -127,7 +117,6 @@ function PaymentTracker({ readOnly = false }) {
         </button>
       </div>
 
-      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       {showForm && (
@@ -218,7 +207,7 @@ function PaymentTracker({ readOnly = false }) {
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : 'Log Payment'}
           </button>
         </form>
@@ -252,7 +241,6 @@ function PaymentTracker({ readOnly = false }) {
                     <td data-label="Actions" className="actions-cell">
                       <TableActions
                         onDelete={() => handleDeletePayment(payment.id)}
-                        readOnly={readOnly}
                         isDeleting={deletingPaymentId === payment.id}
                       />
                     </td>

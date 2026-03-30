@@ -6,6 +6,7 @@ dist/
 
 # Local environment
 .env
+.env.local
 
 # macOS
 .DS_Store
@@ -14,8 +15,4 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-node_modules/
-dist/
-.env.local
-.DS_Store
 *.log

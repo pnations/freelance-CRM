@@ -7,7 +7,7 @@ import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 import '../styles/clients.css';
 
-function Clients({ readOnly = false }) {
+function Clients() {
   const [clients, setClients] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -52,16 +52,8 @@ function Clients({ readOnly = false }) {
   });
 
   useEffect(() => {
-    if (readOnly) {
-      setClients([]);
-      setOrders([]);
-      setShowForm(false);
-      setEditingId(null);
-      setSelectedClient(null);
-      return;
-    }
     loadData();
-  }, [readOnly]);
+  }, []);
 
   async function loadData() {
     try {
@@ -79,7 +71,6 @@ function Clients({ readOnly = false }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (readOnly) return;
 
     if (formData.businessName && formData.contactPerson) {
       setIsSubmitting(true);
@@ -115,7 +106,6 @@ function Clients({ readOnly = false }) {
   }
 
   function handleEdit(client) {
-    if (readOnly) return;
     setFormData({
       businessName: client.businessName,
       contactPerson: client.contactPerson,
@@ -129,7 +119,6 @@ function Clients({ readOnly = false }) {
   }
 
   async function handleDelete(id) {
-    if (readOnly) return;
     setErrorMessage('');
     requestDelete(id);
   }
@@ -165,9 +154,7 @@ function Clients({ readOnly = false }) {
         <button
           type="button"
           className="btn-primary"
-          disabled={readOnly}
           onClick={() => {
-            if (readOnly) return;
             if (!showForm) {
               resetForm();
             }
@@ -189,7 +176,6 @@ function Clients({ readOnly = false }) {
         onCancel={cancelDelete}
       />
 
-      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable creating, editing, and deleting records.</p>}
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       <div className="search-section">
@@ -252,7 +238,7 @@ function Clients({ readOnly = false }) {
                 />
               </div>
 
-          <button type="submit" className="btn-primary" disabled={readOnly || isSubmitting}>
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : editingId ? 'Update Client' : 'Add Client'}
           </button>
         </form>
@@ -288,7 +274,6 @@ function Clients({ readOnly = false }) {
                         <TableActions
                           onEdit={() => handleEdit(client)}
                           onDelete={() => handleDelete(client.id)}
-                          readOnly={readOnly}
                           isDeleting={deletingId === client.id}
                           stopPropagation
                         />
@@ -312,7 +297,6 @@ function Clients({ readOnly = false }) {
               <button
                 type="button"
                 className="btn-secondary btn-small"
-                disabled={readOnly}
                 onClick={() => handleEdit(selectedClient)}
               >
                 Edit Contact Details

@@ -3,7 +3,7 @@ import { getOrders, getPayments } from '../services/dataService';
 import '../styles/forms.css';
 import '../styles/dashboard.css';
 
-function Dashboard({ readOnly = false }) {
+function Dashboard() {
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -13,12 +13,6 @@ function Dashboard({ readOnly = false }) {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    if (readOnly) {
-      setOrders([]);
-      setPayments([]);
-      return;
-    }
-
     loadData();
     
     // Auto-refresh every 30 seconds
@@ -27,7 +21,7 @@ function Dashboard({ readOnly = false }) {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [readOnly]);
+  }, []);
 
   useEffect(() => {
     applyFilters();
@@ -89,7 +83,6 @@ function Dashboard({ readOnly = false }) {
   return (
     <div className="dashboard page-container">
       <h2 className="page-title">Dashboard Overview</h2>
-      {readOnly && <p className="readonly-note">Read-only mode: configure Supabase credentials to enable data operations.</p>}
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
       <div className="metrics">
@@ -166,15 +159,15 @@ function Dashboard({ readOnly = false }) {
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order) => (
                   <tr key={order.id}>
-                    <td>{order.clientName}</td>
-                    <td>{order.type}</td>
-                    <td>{order.dateAccepted}</td>
-                    <td>
+                    <td data-label="Client Name">{order.clientName}</td>
+                    <td data-label="Project Type">{order.type}</td>
+                    <td data-label="Date Accepted">{order.dateAccepted}</td>
+                    <td data-label="Status">
                       <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td>${order.cost.toFixed(2)}</td>
+                    <td data-label="Project Cost">${order.cost.toFixed(2)}</td>
                   </tr>
                 ))
               ) : (
