@@ -7,6 +7,13 @@ import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
 function OrderForm() {
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const [orders, setOrders] = useState([]);
   const {
     formData,
@@ -205,10 +212,10 @@ function OrderForm() {
           <thead>
             <tr>
               <th>Client</th>
-              <th>Type</th>
+              <th>Project Type</th>
               <th>Date Accepted</th>
               <th>Status</th>
-              <th>Cost</th>
+              <th>Project Cost</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -217,14 +224,14 @@ function OrderForm() {
               orders.map((order) => (
                 <tr key={order.id}>
                   <td data-label="Client">{order.clientName}</td>
-                  <td data-label="Type">{order.type}</td>
+                  <td data-label="Project Type">{order.type}</td>
                   <td data-label="Date Accepted">{order.dateAccepted}</td>
                   <td data-label="Status">
                     <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td data-label="Cost">${Number(order.cost || 0).toFixed(2)}</td>
+                  <td data-label="Project Cost">{currencyFormatter.format(Number(order.cost || 0))}</td>
                   <td data-label="Actions" className="actions-cell">
                     <TableActions
                       onEdit={() => handleEdit(order)}

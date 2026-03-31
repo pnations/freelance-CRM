@@ -4,6 +4,13 @@ import '../styles/forms.css';
 import '../styles/dashboard.css';
 
 function Dashboard() {
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -88,15 +95,15 @@ function Dashboard() {
       <div className="metrics">
         <div className="metric-card">
           <div className="metric-label">Total Revenue</div>
-          <div className="metric-value">${getTotalRevenue().toFixed(2)}</div>
+          <div className="metric-value">{currencyFormatter.format(getTotalRevenue())}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Paid Revenue</div>
-          <div className="metric-value">${getPaidRevenue().toFixed(2)}</div>
+          <div className="metric-value">{currencyFormatter.format(getPaidRevenue())}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Pending Payments</div>
-          <div className="metric-value">${getPendingPayments().toFixed(2)}</div>
+          <div className="metric-value">{currencyFormatter.format(getPendingPayments())}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Total Hours</div>
@@ -148,7 +155,7 @@ function Dashboard() {
           <table className="table">
             <thead>
               <tr>
-                <th>Client Name</th>
+                <th>Client</th>
                 <th>Project Type</th>
                 <th>Date Accepted</th>
                 <th>Status</th>
@@ -159,7 +166,7 @@ function Dashboard() {
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order) => (
                   <tr key={order.id}>
-                    <td data-label="Client Name">{order.clientName}</td>
+                      <td data-label="Client">{order.clientName}</td>
                     <td data-label="Project Type">{order.type}</td>
                     <td data-label="Date Accepted">{order.dateAccepted}</td>
                     <td data-label="Status">
@@ -167,7 +174,7 @@ function Dashboard() {
                         {order.status}
                       </span>
                     </td>
-                    <td data-label="Project Cost">${order.cost.toFixed(2)}</td>
+                    <td data-label="Project Cost">{currencyFormatter.format(Number(order.cost || 0))}</td>
                   </tr>
                 ))
               ) : (

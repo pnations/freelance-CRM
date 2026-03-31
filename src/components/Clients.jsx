@@ -8,6 +8,13 @@ import '../styles/forms.css';
 import '../styles/clients.css';
 
 function Clients() {
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const [clients, setClients] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -147,6 +154,8 @@ function Clients() {
     );
   }
 
+  const filteredClients = getFilteredClients();
+
   return (
     <div className="clients-page page-container">
       <div className="page-header">
@@ -257,38 +266,41 @@ function Clients() {
                 </tr>
               </thead>
               <tbody>
-                {getFilteredClients().map((client) => {
-                  const clientProjects = getClientProjects(client.businessName);
-                  return (
-                    <tr
-                      key={client.id}
-                      className={selectedClient?.id === client.id ? 'selected-row' : ''}
-                      onClick={() => viewClientDetails(client)}
-                    >
-                      <td data-label="Business">{client.businessName}</td>
-                      <td data-label="Contact">{client.contactPerson}</td>
-                      <td data-label="Email">{client.email || '—'}</td>
-                      <td data-label="Phone">{client.phone || '—'}</td>
-                      <td data-label="Projects">{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
-                      <td data-label="Actions" className="actions-cell">
-                        <TableActions
-                          onEdit={() => handleEdit(client)}
-                          onDelete={() => handleDelete(client.id)}
-                          isDeleting={deletingId === client.id}
-                          stopPropagation
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredClients.length > 0 ? (
+                  filteredClients.map((client) => {
+                    const clientProjects = getClientProjects(client.businessName);
+                    return (
+                      <tr
+                        key={client.id}
+                        className={selectedClient?.id === client.id ? 'selected-row' : ''}
+                        onClick={() => viewClientDetails(client)}
+                      >
+                        <td data-label="Business">{client.businessName}</td>
+                        <td data-label="Contact">{client.contactPerson}</td>
+                        <td data-label="Email">{client.email || '—'}</td>
+                        <td data-label="Phone">{client.phone || '—'}</td>
+                        <td data-label="Projects">{clientProjects.length} project{clientProjects.length !== 1 ? 's' : ''}</td>
+                        <td data-label="Actions" className="actions-cell">
+                          <TableActions
+                            onEdit={() => handleEdit(client)}
+                            onDelete={() => handleDelete(client.id)}
+                            isDeleting={deletingId === client.id}
+                            stopPropagation
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="empty-state">
+                      {searchQuery ? 'No clients match your search.' : 'No clients yet. Add your first client to get started.'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          {getFilteredClients().length === 0 && (
-            <p className="empty-state">
-              {searchQuery ? 'No clients match your search.' : 'No clients yet. Add your first client to get started.'}
-            </p>
-          )}
 
       {selectedClient && (
           <div className="client-details-panel">
@@ -342,7 +354,7 @@ function Clients() {
                           <th>Project Type</th>
                           <th>Date Accepted</th>
                           <th>Status</th>
-                          <th>Cost</th>
+                          <th>Project Cost</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -355,7 +367,7 @@ function Clients() {
                                 {project.status}
                               </span>
                             </td>
-                            <td data-label="Cost">${Number(project.cost).toLocaleString()}</td>
+                            <td data-label="Project Cost">{currencyFormatter.format(Number(project.cost || 0))}</td>
                           </tr>
                         ))}
                       </tbody>

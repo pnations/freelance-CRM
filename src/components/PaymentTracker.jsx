@@ -7,6 +7,13 @@ import useCrudForm from '../hooks/useCrudForm';
 import '../styles/forms.css';
 
 function PaymentTracker() {
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const [payments, setPayments] = useState([]);
   const [orders, setOrders] = useState([]);
   const {
@@ -133,7 +140,7 @@ function PaymentTracker() {
               <option value="">Select an order</option>
               {orders.map((order) => (
                 <option key={order.id} value={order.id}>
-                  {order.clientName} - {order.type} - ${order.cost}
+                  {order.clientName} - {order.type} - {currencyFormatter.format(Number(order.cost || 0))}
                 </option>
               ))}
             </select>
@@ -233,7 +240,7 @@ function PaymentTracker() {
                 return (
                   <tr key={payment.id}>
                     <td data-label="Order">{orderInfo.clientName} - {orderInfo.type}</td>
-                    <td data-label="Amount">${Number(payment.amount || 0).toFixed(2)}</td>
+                    <td data-label="Amount">{currencyFormatter.format(Number(payment.amount || 0))}</td>
                     <td data-label="Date">{payment.date}</td>
                     <td data-label="Method">{payment.method}</td>
                     <td data-label="Hours">{Number(payment.hours) > 0 ? Number(payment.hours) : '—'}</td>
