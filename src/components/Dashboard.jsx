@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getOrders, getPayments } from '../services/dataService';
-import '../styles/forms.css';
-import '../styles/dashboard.css';
+import '../styles/base.css';
+import '../styles/tables.css';
+import '../styles/panels.css';
 
 function Dashboard() {
   const currencyFormatter = new Intl.NumberFormat('en-US', {

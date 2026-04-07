@@ -28,9 +28,9 @@ dashboard/
 │   │   ├── supabase.js
 │   │   └── dataService.js
 │   ├── styles/
-│   │   ├── dashboard.css
-│   │   ├── clients.css
-│   │   └── forms.css
+│   │   ├── base.css
+│   │   ├── tables.css
+│   │   └── panels.css
 │   ├── App.jsx
 │   ├── App.css
 │   ├── index.css
@@ -74,9 +74,9 @@ dashboard/
 
 ## Styling
 - App.css — mobile-first app shell, banner, and drawer/sidebar navigation styling
-- dashboard.css — dashboard metrics and filters styling
-- clients.css — Clients-specific detail panel and search styling
-- forms.css — shared page, form, table, button, status badge, and responsive rules
+- base.css — shared page layout, forms, buttons, errors, and dialog styling
+- tables.css — shared tables, empty states, status badges, and mobile stacked-row behavior
+- panels.css — dashboard metrics/filters/cards plus Clients search and detail panel styling
 
 ## Entry Points
 - index.html — base HTML shell for Vite

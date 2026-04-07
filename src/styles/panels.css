@@ -99,7 +99,7 @@
 .filters select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
 }
 
 .orders-table {
@@ -108,12 +108,6 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-}
-
-.orders-table .table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .orders-table .table-wrapper table {
@@ -130,12 +124,139 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.search-section {
+  margin-bottom: 24px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.clients-page table tbody tr {
+  cursor: pointer;
+}
+
+.clients-page .selected-row {
+  background-color: var(--color-background);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.client-details-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 32px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+}
+
+.client-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.client-details-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.client-info-section,
+.client-projects-section {
+  margin-bottom: 32px;
+}
+
+.client-info-section:last-child,
+.client-projects-section:last-child {
+  margin-bottom: 0;
+}
+
+.client-info-section h4,
+.client-projects-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.info-item label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.info-item p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.info-item a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.info-item a:hover {
+  text-decoration: underline;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.projects-list {
+  margin-top: 16px;
+}
+
 @media (max-width: 768px) {
-  .metrics {
+  .metrics,
+  .filters,
+  .info-grid {
     grid-template-columns: 1fr;
   }
 
-  .filters {
-    grid-template-columns: 1fr;
+  .search-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .client-details-panel {
+    position: static;
+    max-height: none;
   }
 }

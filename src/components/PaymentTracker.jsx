@@ -4,7 +4,8 @@ import ConfirmDialog from './ConfirmDialog';
 import TableActions from './TableActions';
 import useConfirmDelete from '../hooks/useConfirmDelete';
 import useCrudForm from '../hooks/useCrudForm';
-import '../styles/forms.css';
+import '../styles/base.css';
+import '../styles/tables.css';
 
 function PaymentTracker() {
   const currencyFormatter = new Intl.NumberFormat('en-US', {

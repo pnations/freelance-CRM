@@ -126,9 +126,9 @@ src/
 │   ├── dataService.js (data management)
 │   └── supabase.js (Supabase config)
 ├── styles/
-│   ├── dashboard.css
-│   ├── forms.css
-│   └── clients.css
+│   ├── base.css
+│   ├── tables.css
+│   └── panels.css
 ├── App.jsx
 ├── App.css
 ├── index.css

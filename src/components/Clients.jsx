@@ -4,8 +4,9 @@ import ConfirmDialog from './ConfirmDialog';
 import TableActions from './TableActions';
 import useConfirmDelete from '../hooks/useConfirmDelete';
 import useCrudForm from '../hooks/useCrudForm';
-import '../styles/forms.css';
-import '../styles/clients.css';
+import '../styles/base.css';
+import '../styles/tables.css';
+import '../styles/panels.css';
 
 function Clients() {
   const currencyFormatter = new Intl.NumberFormat('en-US', {
