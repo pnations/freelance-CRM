@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { getPayments, getOrders, addPayment, deletePayment } from '../services/dataService';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  getPayments,
+  getDeals,
+  addPayment,
+  updatePayment,
+  deletePayment,
+} from '../services/dataService';
 import ConfirmDialog from './ConfirmDialog';
-import TableActions from './TableActions';
+import InvoicePreviewModal from './InvoicePreviewModal';
 import useConfirmDelete from '../hooks/useConfirmDelete';
 import useCrudForm from '../hooks/useCrudForm';
 import '../styles/base.css';
@@ -16,7 +23,14 @@ function PaymentTracker() {
   });
 
   const [payments, setPayments] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [deals, setDeals] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingPaymentId, setEditingPaymentId] = useState(null);
+  const [editingPaymentDraft, setEditingPaymentDraft] = useState(null);
+  const [savingPaymentId, setSavingPaymentId] = useState(null);
+  const [invoiceDealId, setInvoiceDealId] = useState(null);
+  const [actionsMenu, setActionsMenu] = useState(null);
+  const menuItemRefs = useRef([]);
   const {
     formData,
     setFormData,
@@ -56,17 +70,59 @@ function PaymentTracker() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    function closeMenu() {
+      setActionsMenu(null);
+    }
+
+    function handleDocumentClick(event) {
+      if (event.target.closest('.actions-dropdown-menu-floating') || event.target.closest('.actions-menu-trigger')) {
+        return;
+      }
+      closeMenu();
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    }
+
+    if (actionsMenu) {
+      document.addEventListener('mousedown', handleDocumentClick);
+      document.addEventListener('keydown', handleEscape);
+      window.addEventListener('resize', closeMenu);
+      window.addEventListener('scroll', closeMenu, true);
+      return () => {
+        document.removeEventListener('mousedown', handleDocumentClick);
+        document.removeEventListener('keydown', handleEscape);
+        window.removeEventListener('resize', closeMenu);
+        window.removeEventListener('scroll', closeMenu, true);
+      };
+    }
+
+    return undefined;
+  }, [actionsMenu]);
+
+  useEffect(() => {
+    if (!actionsMenu) {
+      return;
+    }
+
+    menuItemRefs.current[0]?.focus();
+  }, [actionsMenu]);
+
   async function loadData() {
     try {
       const paymentsData = await getPayments();
-      const ordersData = await getOrders();
+      const dealsData = await getDeals();
       setPayments(paymentsData);
-      setOrders(ordersData);
+      setDeals(dealsData);
       setErrorMessage('');
     } catch (error) {
       setErrorMessage(error.message || 'Failed to load payments.');
       setPayments([]);
-      setOrders([]);
+      setDeals([]);
     }
   }
 
@@ -102,15 +158,218 @@ function PaymentTracker() {
     requestDelete(id);
   }
 
-  function getOrderInfo(orderId) {
-    const order = orders.find((o) => o.id === orderId);
-    return order ? { clientName: order.clientName, type: order.type, cost: order.cost } : { clientName: 'Unknown', type: 'Unknown', cost: 0 };
+  function normalizeId(value) {
+    return String(value ?? '');
+  }
+
+  function getPaymentsForDeal(dealId) {
+    const normalizedDealId = normalizeId(dealId);
+    return payments.filter((payment) => normalizeId(payment.orderId) === normalizedDealId);
+  }
+
+  function getDealInfo(orderId) {
+    const normalizedOrderId = normalizeId(orderId);
+    const deal = deals.find((d) => normalizeId(d.id) === normalizedOrderId);
+    return deal ? { clientName: deal.clientName, type: deal.type, cost: deal.cost } : { clientName: 'Unknown', type: 'Unknown', cost: 0 };
+  }
+
+  function openInvoice(dealId) {
+    const normalizedDealId = normalizeId(dealId);
+    const deal = deals.find((d) => normalizeId(d.id) === normalizedDealId);
+    if (!deal) {
+      setErrorMessage('Unable to generate invoice. Deal record not found.');
+      return;
+    }
+    setInvoiceDealId(normalizedDealId);
+  }
+
+  function closeInvoice() {
+    setInvoiceDealId(null);
+  }
+
+  function startEditPayment(payment) {
+    setEditingPaymentId(payment.id);
+    setEditingPaymentDraft({
+      orderId: normalizeId(payment.orderId),
+      amount: String(payment.amount ?? ''),
+      date: payment.date || '',
+      method: payment.method || 'Bank Transfer',
+      hours: payment.hours == null ? '' : String(payment.hours),
+      comment: payment.comment || '',
+    });
+    setActionsMenu(null);
+  }
+
+  function cancelEditPayment() {
+    setEditingPaymentId(null);
+    setEditingPaymentDraft(null);
+  }
+
+  function updateEditDraft(field, value) {
+    setEditingPaymentDraft((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  }
+
+  async function saveEditPayment(paymentId) {
+    if (!editingPaymentDraft) {
+      return;
+    }
+
+    const amount = Number(editingPaymentDraft.amount);
+    const hoursValue = editingPaymentDraft.hours === '' ? null : Number(editingPaymentDraft.hours);
+    if (!editingPaymentDraft.orderId || !editingPaymentDraft.date || !editingPaymentDraft.method || !Number.isFinite(amount) || amount <= 0) {
+      setErrorMessage('Please provide a valid deal, amount, date, and method before saving.');
+      return;
+    }
+    if (hoursValue != null && (!Number.isFinite(hoursValue) || hoursValue < 0)) {
+      setErrorMessage('Hours must be blank or a non-negative number.');
+      return;
+    }
+
+    setSavingPaymentId(paymentId);
+    setErrorMessage('');
+    try {
+      await updatePayment(
+        paymentId,
+        editingPaymentDraft.orderId,
+        amount,
+        editingPaymentDraft.date,
+        editingPaymentDraft.method,
+        {
+          hours: hoursValue,
+          comment: editingPaymentDraft.comment,
+        }
+      );
+      cancelEditPayment();
+      setActionsMenu(null);
+      await loadData();
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to update payment.');
+    } finally {
+      setSavingPaymentId(null);
+    }
+  }
+
+  function getFilteredPayments() {
+    if (!searchQuery.trim()) {
+      return payments;
+    }
+
+    const query = searchQuery.toLowerCase();
+    return payments.filter((payment) => {
+      const dealInfo = getDealInfo(payment.orderId);
+      const amountText = String(payment.amount ?? '').toLowerCase();
+      const hoursText = String(payment.hours ?? '').toLowerCase();
+
+      return (
+        dealInfo.clientName.toLowerCase().includes(query)
+        || dealInfo.type.toLowerCase().includes(query)
+        || String(payment.date ?? '').toLowerCase().includes(query)
+        || String(payment.method ?? '').toLowerCase().includes(query)
+        || String(payment.comment ?? '').toLowerCase().includes(query)
+        || amountText.includes(query)
+        || hoursText.includes(query)
+      );
+    });
+  }
+
+  const filteredPayments = getFilteredPayments();
+  const hasActiveEdit = Boolean(editingPaymentId);
+  const menuPayment = actionsMenu ? payments.find((payment) => payment.id === actionsMenu.paymentId) : null;
+  const selectedInvoiceDeal = invoiceDealId
+    ? deals.find((deal) => normalizeId(deal.id) === normalizeId(invoiceDealId))
+    : null;
+  const invoicePayments = selectedInvoiceDeal ? getPaymentsForDeal(selectedInvoiceDeal.id) : [];
+
+  function toggleActionsMenu(event, payment) {
+    if (actionsMenu?.paymentId === payment.id) {
+      setActionsMenu(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 170;
+    const menuHeight = 140;
+    const viewportPadding = 8;
+    const maxLeft = window.innerWidth - menuWidth - viewportPadding;
+    const left = Math.min(maxLeft, Math.max(viewportPadding, rect.right - menuWidth));
+
+    let top = rect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = Math.max(viewportPadding, rect.top - menuHeight - 6);
+    }
+
+    setActionsMenu({
+      paymentId: payment.id,
+      orderId: payment.orderId,
+      top,
+      left,
+      triggerId: `payment-actions-trigger-${payment.id}`,
+    });
+  }
+
+  function closeActionsMenu(returnFocus = false) {
+    const triggerId = actionsMenu?.triggerId;
+    setActionsMenu(null);
+    if (returnFocus && triggerId) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(triggerId)?.focus();
+      });
+    }
+  }
+
+  function handleActionsMenuKeyDown(event) {
+    const enabledItems = menuItemRefs.current.filter(Boolean);
+    if (!enabledItems.length) {
+      return;
+    }
+
+    const currentIndex = enabledItems.indexOf(document.activeElement);
+    const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeActionsMenu(true);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      const nextIndex = (safeIndex + 1) % enabledItems.length;
+      enabledItems[nextIndex].focus();
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      const nextIndex = (safeIndex - 1 + enabledItems.length) % enabledItems.length;
+      enabledItems[nextIndex].focus();
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      enabledItems[0].focus();
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      enabledItems[enabledItems.length - 1].focus();
+    }
   }
 
   return (
     <div className="payment-tracker page-container">
       <div className="page-header">
-        <h2 className="page-title">Payments & Hours</h2>
+        <div>
+          <h2 className="page-title">Payments & Hours</h2>
+          {hasActiveEdit && (
+            <p className="hint-text">Editing payment - save or cancel changes to continue.</p>
+          )}
+        </div>
         <button
           type="button"
           className="btn-primary"
@@ -120,6 +379,7 @@ function PaymentTracker() {
             }
             setShowForm(!showForm);
           }}
+          disabled={hasActiveEdit}
         >
           {showForm ? 'Cancel' : 'Log Payment'}
         </button>
@@ -127,10 +387,22 @@ function PaymentTracker() {
 
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
 
+      {!showForm && (
+        <div className="search-section">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search payments..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
       {showForm && (
         <form className="form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Order</label>
+            <label>Deal</label>
             <select
               value={formData.orderId}
               onChange={(e) =>
@@ -138,10 +410,10 @@ function PaymentTracker() {
               }
               required
             >
-              <option value="">Select an order</option>
-              {orders.map((order) => (
-                <option key={order.id} value={order.id}>
-                  {order.clientName} - {order.type} - {currencyFormatter.format(Number(order.cost || 0))}
+              <option value="">Select a deal</option>
+              {deals.map((deal) => (
+                <option key={deal.id} value={deal.id}>
+                  {deal.clientName} - {deal.type} - {currencyFormatter.format(Number(deal.cost || 0))}
                 </option>
               ))}
             </select>
@@ -221,50 +493,164 @@ function PaymentTracker() {
         </form>
       )}
 
-      <div className="table-wrapper">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Amount</th>
-              <th>Date</th>
-              <th>Method</th>
-              <th>Hours</th>
-              <th>Comment</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.length > 0 ? (
-              payments.map((payment) => {
-                const orderInfo = getOrderInfo(payment.orderId);
-                return (
-                  <tr key={payment.id}>
-                    <td data-label="Order">{orderInfo.clientName} - {orderInfo.type}</td>
-                    <td data-label="Amount">{currencyFormatter.format(Number(payment.amount || 0))}</td>
-                    <td data-label="Date">{payment.date}</td>
-                    <td data-label="Method">{payment.method}</td>
-                    <td data-label="Hours">{Number(payment.hours) > 0 ? Number(payment.hours) : '—'}</td>
-                    <td data-label="Comment">{payment.comment || '—'}</td>
-                    <td data-label="Actions" className="actions-cell">
-                      <TableActions
-                        onDelete={() => handleDeletePayment(payment.id)}
-                        isDeleting={deletingPaymentId === payment.id}
-                      />
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
+      {!showForm && (
+        <div className="table-wrapper">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="7" className="empty-state">
-                  No payments logged yet.
-                </td>
+                <th>Deal</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Method</th>
+                <th>Hours</th>
+                <th>Comment</th>
+                <th>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredPayments.length > 0 ? (
+                filteredPayments.map((payment) => {
+                  const dealInfo = getDealInfo(payment.orderId);
+                  const isEditing = editingPaymentId === payment.id;
+                  const isSaving = savingPaymentId === payment.id;
+                  const disableRowActions = hasActiveEdit && !isEditing;
+                  const isActionsExpanded = actionsMenu?.paymentId === payment.id;
+                  return (
+                    <tr key={payment.id}>
+                      <td data-label="Deal">
+                        {isEditing ? (
+                          <select
+                            value={editingPaymentDraft?.orderId || ''}
+                            onChange={(event) => updateEditDraft('orderId', event.target.value)}
+                          >
+                            <option value="">Select a deal</option>
+                            {deals.map((deal) => (
+                              <option key={deal.id} value={String(deal.id)}>
+                                {deal.clientName} - {deal.type}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <>{dealInfo.clientName} - {dealInfo.type}</>
+                        )}
+                      </td>
+                      <td data-label="Amount">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editingPaymentDraft?.amount || ''}
+                            onChange={(event) => updateEditDraft('amount', event.target.value)}
+                          />
+                        ) : (
+                          currencyFormatter.format(Number(payment.amount || 0))
+                        )}
+                      </td>
+                      <td data-label="Date">
+                        {isEditing ? (
+                          <input
+                            type="date"
+                            value={editingPaymentDraft?.date || ''}
+                            onChange={(event) => updateEditDraft('date', event.target.value)}
+                          />
+                        ) : (
+                          payment.date
+                        )}
+                      </td>
+                      <td data-label="Method">
+                        {isEditing ? (
+                          <select
+                            value={editingPaymentDraft?.method || 'Bank Transfer'}
+                            onChange={(event) => updateEditDraft('method', event.target.value)}
+                          >
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="PayPal">PayPal</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Check">Check</option>
+                            <option value="Cash">Cash</option>
+                          </select>
+                        ) : (
+                          payment.method
+                        )}
+                      </td>
+                      <td data-label="Hours">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            step="0.25"
+                            min="0"
+                            value={editingPaymentDraft?.hours || ''}
+                            onChange={(event) => updateEditDraft('hours', event.target.value)}
+                            placeholder="0.0"
+                          />
+                        ) : (
+                          Number(payment.hours) > 0 ? Number(payment.hours) : '—'
+                        )}
+                      </td>
+                      <td data-label="Comment">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editingPaymentDraft?.comment || ''}
+                            onChange={(event) => updateEditDraft('comment', event.target.value)}
+                            placeholder="Optional note"
+                          />
+                        ) : (
+                          payment.comment || '—'
+                        )}
+                      </td>
+                      <td data-label="Actions" className="actions-cell">
+                        {isEditing ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn-primary btn-small"
+                              onClick={() => saveEditPayment(payment.id)}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary btn-small"
+                              onClick={cancelEditPayment}
+                              disabled={isSaving}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <div className="actions-dropdown-wrapper">
+                            <button
+                              type="button"
+                              className="actions-menu-trigger"
+                              onClick={(event) => toggleActionsMenu(event, payment)}
+                              disabled={deletingPaymentId === payment.id || disableRowActions}
+                              aria-haspopup="menu"
+                              aria-expanded={isActionsExpanded}
+                              aria-label="Open row actions"
+                              id={`payment-actions-trigger-${payment.id}`}
+                            >
+                              ⋯
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" className="empty-state">
+                    {searchQuery ? 'No payments match your search.' : 'No payments logged yet.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={Boolean(confirmDeletePaymentId)}
@@ -275,6 +661,70 @@ function PaymentTracker() {
         onConfirm={confirmDeletePayment}
         onCancel={cancelDelete}
       />
+
+      <InvoicePreviewModal
+        isOpen={Boolean(selectedInvoiceDeal)}
+        deal={selectedInvoiceDeal}
+        payments={invoicePayments}
+        currencyFormatter={currencyFormatter}
+        onClose={closeInvoice}
+      />
+
+      {actionsMenu && createPortal(
+        <div
+          className="actions-dropdown-menu actions-dropdown-menu-floating"
+          role="menu"
+          style={{ top: `${actionsMenu.top}px`, left: `${actionsMenu.left}px` }}
+          onKeyDown={handleActionsMenuKeyDown}
+        >
+          <button
+            type="button"
+            className="actions-dropdown-item"
+            onClick={() => {
+              openInvoice(actionsMenu.orderId);
+              closeActionsMenu(true);
+            }}
+            role="menuitem"
+            ref={(element) => {
+              menuItemRefs.current[0] = element;
+            }}
+          >
+            Invoice
+          </button>
+          <button
+            type="button"
+            className="actions-dropdown-item"
+            onClick={() => {
+              if (menuPayment) {
+                startEditPayment(menuPayment);
+              }
+            }}
+            role="menuitem"
+            disabled={!menuPayment}
+            ref={(element) => {
+              menuItemRefs.current[1] = element;
+            }}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="actions-dropdown-item actions-dropdown-item-danger"
+            onClick={() => {
+              handleDeletePayment(actionsMenu.paymentId);
+              closeActionsMenu(true);
+            }}
+            role="menuitem"
+            disabled={deletingPaymentId === actionsMenu.paymentId}
+            ref={(element) => {
+              menuItemRefs.current[2] = element;
+            }}
+          >
+            {deletingPaymentId === actionsMenu.paymentId ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

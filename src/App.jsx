@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
-import Clients from './components/Clients';
-import OrderForm from './components/OrderForm';
+import DealsForm from './components/DealsForm';
 import PaymentTracker from './components/PaymentTracker';
 import Navigation from './components/Navigation';
 
@@ -12,8 +11,7 @@ function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'clients', label: 'Clients' },
-    { id: 'orders', label: 'Orders' },
+    { id: 'deals', label: 'Deals' },
     { id: 'payments', label: 'Payments' },
   ];
 
@@ -47,8 +45,7 @@ function App() {
 
       <main className="main-content">
         {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'clients' && <Clients />}
-        {currentPage === 'orders' && <OrderForm />}
+        {currentPage === 'deals' && <DealsForm />}
         {currentPage === 'payments' && <PaymentTracker />}
       </main>
     </div>

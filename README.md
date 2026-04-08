@@ -1,17 +1,16 @@
 # Freelance CRM Dashboard
 
-A lightweight, professional CRM dashboard for managing freelance clients, orders, payments, and hours tracking. Built with React, Vite, and vanilla CSS with a beautiful teal color scheme.
+A lightweight, professional CRM dashboard for managing freelance clients, deals, payments, and hours tracking. Built with React, Vite, and vanilla CSS with a beautiful teal color scheme.
 
 **Status**: Early version with Supabase-backed data.
 
 ## Features
 
 - **Dashboard Overview** - Real-time metrics: total revenue, paid revenue, pending payments, total hours (auto-refreshes every 30 seconds)
-- **Client Management** - Add, edit, and manage client information with contact details and project history
-- **Client Search** - Search clients by name, contact person, email, phone, or notes
-- **Order Management** - Create and track orders with client name, project type, status, and cost
+- **Deals-Centric Client Capture** - Add client business/contact details directly while creating or editing deals
+- **Deal Management** - Create and track deals with project type, status, cost, and embedded client details
 - **Payments & Hours** - Log payments with optional hours and comments in one unified logged table
-- **Advanced Filtering** - Filter orders by status, client name, and project type
+- **Advanced Filtering** - Filter deals by status, client name, and project type
 - **Mobile-First Navigation** - Hamburger drawer on small screens with desktop sidebar on larger screens
 - **Professional UI** - Clean, responsive design with teal color scheme and smooth interactions
 - **Responsive Design** - Fully responsive on desktop, tablet, and mobile devices
@@ -102,6 +101,7 @@ alter table public.payments
 
 Versioned file in this repo:
 - `supabase/migrations/20260327_add_payments_hours_comment.sql`
+- `supabase/migrations/20260407_deals_client_details_archive_clients.sql`
 
 Notes:
 - Both columns are nullable so existing rows remain valid.
@@ -113,10 +113,9 @@ Notes:
 src/
 ├── components/
 │   ├── Dashboard.jsx
-│   ├── Clients.jsx
 │   ├── ConfirmDialog.jsx
 │   ├── Navigation.jsx
-│   ├── OrderForm.jsx
+│   ├── DealsForm.jsx
 │   ├── PaymentTracker.jsx
 │   └── TableActions.jsx
 ├── hooks/

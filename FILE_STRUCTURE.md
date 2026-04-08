@@ -12,13 +12,13 @@ dashboard/
 ├── supabase/
 │   └── migrations/
 │       └── 20260327_add_payments_hours_comment.sql
+│       └── 20260407_deals_client_details_archive_clients.sql
 ├── src/
 │   ├── components/
 │   │   ├── Dashboard.jsx
-│   │   ├── Clients.jsx
 │   │   ├── ConfirmDialog.jsx
 │   │   ├── Navigation.jsx
-│   │   ├── OrderForm.jsx
+│   │   ├── DealsForm.jsx
 │   │   ├── PaymentTracker.jsx
 │   │   └── TableActions.jsx
 │   ├── hooks/
@@ -54,13 +54,13 @@ dashboard/
 
 ## Database Migrations
 - supabase/migrations/20260327_add_payments_hours_comment.sql — adds payments.hours and payments.comment columns
+- supabase/migrations/20260407_deals_client_details_archive_clients.sql — adds deal-level client detail columns, backfills from legacy clients, archives and drops clients table
 
 ## React Components
 - Dashboard.jsx — metrics overview and data table fed by Supabase data
-- Clients.jsx — create, update, and delete client records and view related projects
 - ConfirmDialog.jsx — shared in-app confirmation modal for destructive actions
 - Navigation.jsx — mobile-first sidebar/drawer navigation with hamburger controls
-- OrderForm.jsx — create, update, and delete orders
+- DealsForm.jsx — create, update, and delete deals with embedded client business/contact details
 - PaymentTracker.jsx — log payments with optional hours/comments and manage a unified payments log
 - TableActions.jsx — reusable row action buttons (edit/delete) with loading/disabled states
 
@@ -70,7 +70,7 @@ dashboard/
 
 ## Services
 - supabase.js — initializes the Supabase client from environment variables
-- dataService.js — CRUD helpers for `clients`, `orders`, `payments`, and `hours` table compatibility
+- dataService.js — CRUD helpers for deals, `payments`, and legacy `hours` table compatibility
 
 ## Styling
 - App.css — mobile-first app shell, banner, and drawer/sidebar navigation styling
@@ -86,5 +86,5 @@ dashboard/
 ## Data Flow (Supabase)
 
 ```
-Component → hooks/components helpers → dataService.js → Supabase tables (clients, orders, payments, hours) → component render
+Component → hooks/components helpers → dataService.js → Supabase tables (deals, payments, hours) → component render
 ```

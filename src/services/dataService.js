@@ -8,43 +8,86 @@ function formatDbError(error, fallbackMessage) {
   return error.message || fallbackMessage;
 }
 
-// Orders
-export async function addOrder(clientName, type, dateAccepted, status, cost) {
+// Deals
+export async function addDeal(
+  clientName,
+  clientContactPerson,
+  clientEmail,
+  clientPhone,
+  clientNotes,
+  type,
+  dateAccepted,
+  status,
+  cost
+) {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
-    .insert([{ clientName, type, dateAccepted, status, cost }])
+    .insert([
+      {
+        clientName,
+        clientContactPerson,
+        clientEmail,
+        clientPhone,
+        clientNotes,
+        type,
+        dateAccepted,
+        status,
+        cost,
+      },
+    ])
     .select()
     .single();
-  if (error) throw new Error(formatDbError(error, 'Failed to create order.'));
+  if (error) throw new Error(formatDbError(error, 'Failed to create deal.'));
   return data;
 }
 
-export async function getOrders() {
+export async function getDeals() {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
     .select('*');
-  if (error) throw new Error(formatDbError(error, 'Failed to load orders.'));
+  if (error) throw new Error(formatDbError(error, 'Failed to load deals.'));
   return data || [];
 }
 
-export async function updateOrder(id, clientName, type, dateAccepted, status, cost) {
+export async function updateDeal(
+  id,
+  clientName,
+  clientContactPerson,
+  clientEmail,
+  clientPhone,
+  clientNotes,
+  type,
+  dateAccepted,
+  status,
+  cost
+) {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('orders')
-    .update({ clientName, type, dateAccepted, status, cost })
+    .update({
+      clientName,
+      clientContactPerson,
+      clientEmail,
+      clientPhone,
+      clientNotes,
+      type,
+      dateAccepted,
+      status,
+      cost,
+    })
     .eq('id', id)
     .select()
     .single();
-  if (error) throw new Error(formatDbError(error, 'Failed to update order.'));
+  if (error) throw new Error(formatDbError(error, 'Failed to update deal.'));
   return data;
 }
 
-export async function deleteOrder(id) {
+export async function deleteDeal(id) {
   const supabase = getSupabaseClient();
 
   // Keep application-level cascade explicit for reliability across environments.
@@ -54,20 +97,11 @@ export async function deleteOrder(id) {
     .eq('orderId', id);
   if (paymentError) throw new Error(formatDbError(paymentError, 'Failed to remove related payments.'));
 
-  const { error: hoursError } = await supabase
-    .from('hours')
-    .delete()
-    .eq('orderId', id);
-  // Some environments no longer include the legacy hours table.
-  if (hoursError && hoursError.code !== '42P01') {
-    throw new Error(formatDbError(hoursError, 'Failed to remove related hours entries.'));
-  }
-
   const { error } = await supabase
     .from('orders')
     .delete()
     .eq('id', id);
-  if (error) throw new Error(formatDbError(error, 'Failed to delete order.'));
+  if (error) throw new Error(formatDbError(error, 'Failed to delete deal.'));
 }
 
 // Payments
@@ -106,6 +140,32 @@ export async function getPayments() {
   return data || [];
 }
 
+export async function updatePayment(id, orderId, amount, date, method, options = {}) {
+  const supabase = getSupabaseClient();
+
+  const { hours, comment } = options;
+  const normalizedHours = Number(hours);
+  const shouldStoreHours = Number.isFinite(normalizedHours) && normalizedHours > 0;
+
+  const paymentUpdate = { orderId, amount, date, method, comment: null, hours: null };
+  if (typeof comment === 'string' && comment.trim()) {
+    paymentUpdate.comment = comment.trim();
+  }
+  if (shouldStoreHours) {
+    paymentUpdate.hours = normalizedHours;
+  }
+
+  const { data, error } = await supabase
+    .from('payments')
+    .update(paymentUpdate)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(formatDbError(error, 'Failed to update payment.'));
+
+  return data;
+}
+
 export async function deletePayment(id) {
   const supabase = getSupabaseClient();
 
@@ -114,73 +174,4 @@ export async function deletePayment(id) {
     .delete()
     .eq('id', id);
   if (error) throw new Error(formatDbError(error, 'Failed to delete payment.'));
-}
-
-// Clients
-export async function addClient(businessName, contactPerson, email, phone, notes) {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('clients')
-    .insert([{ businessName, contactPerson, email, phone, notes }])
-    .select()
-    .single();
-  if (error) throw new Error(formatDbError(error, 'Failed to create client.'));
-  return data;
-}
-
-export async function getClients() {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('businessName', { ascending: true });
-  if (error) throw new Error(formatDbError(error, 'Failed to load clients.'));
-  return data || [];
-}
-
-export async function updateClient(id, businessName, contactPerson, email, phone, notes) {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('clients')
-    .update({ businessName, contactPerson, email, phone, notes })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw new Error(formatDbError(error, 'Failed to update client.'));
-  return data;
-}
-
-export async function deleteClient(id) {
-  const supabase = getSupabaseClient();
-
-  const { data: client, error: clientLookupError } = await supabase
-    .from('clients')
-    .select('businessName')
-    .eq('id', id)
-    .single();
-  if (clientLookupError) {
-    throw new Error(formatDbError(clientLookupError, 'Failed to verify client before delete.'));
-  }
-
-  const { data: relatedOrders, error: relatedOrdersError } = await supabase
-    .from('orders')
-    .select('id', { count: 'exact' })
-    .eq('clientName', client.businessName);
-  if (relatedOrdersError) {
-    throw new Error(formatDbError(relatedOrdersError, 'Failed to check client orders before delete.'));
-  }
-
-  const relatedOrderCount = relatedOrders?.length || 0;
-  if (relatedOrderCount > 0) {
-    throw new Error(`Cannot delete this client because ${relatedOrderCount} related order${relatedOrderCount === 1 ? '' : 's'} still exist.`);
-  }
-
-  const { error } = await supabase
-    .from('clients')
-    .delete()
-    .eq('id', id);
-  if (error) throw new Error(formatDbError(error, 'Failed to delete client.'));
 }

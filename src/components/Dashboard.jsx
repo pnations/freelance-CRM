@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getOrders, getPayments } from '../services/dataService';
+import { getDeals, getPayments } from '../services/dataService';
 import '../styles/base.css';
 import '../styles/tables.css';
 import '../styles/panels.css';
@@ -12,9 +12,9 @@ function Dashboard() {
     maximumFractionDigits: 2,
   });
 
-  const [orders, setOrders] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [filteredDeals, setFilteredDeals] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
   const [clientFilter, setClientFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -33,43 +33,43 @@ function Dashboard() {
 
   useEffect(() => {
     applyFilters();
-  }, [orders, statusFilter, clientFilter, typeFilter]);
+  }, [deals, statusFilter, clientFilter, typeFilter]);
 
   async function loadData() {
     try {
-      const ordersData = await getOrders();
+      const dealsData = await getDeals();
       const paymentsData = await getPayments();
 
-      setOrders(ordersData);
+      setDeals(dealsData);
       setPayments(paymentsData);
       setErrorMessage('');
     } catch (error) {
-      setOrders([]);
+      setDeals([]);
       setPayments([]);
       setErrorMessage(error.message || 'Failed to load dashboard data.');
     }
   }
 
   function applyFilters() {
-    let filtered = orders;
+    let filtered = deals;
 
     if (statusFilter !== 'All') {
-      filtered = filtered.filter((order) => order.status === statusFilter);
+      filtered = filtered.filter((deal) => deal.status === statusFilter);
     }
 
     if (clientFilter !== 'All') {
-      filtered = filtered.filter((order) => order.clientName === clientFilter);
+      filtered = filtered.filter((deal) => deal.clientName === clientFilter);
     }
 
     if (typeFilter !== 'All') {
-      filtered = filtered.filter((order) => order.type === typeFilter);
+      filtered = filtered.filter((deal) => deal.type === typeFilter);
     }
 
-    setFilteredOrders(filtered);
+    setFilteredDeals(filtered);
   }
 
   function getTotalRevenue() {
-    return orders.reduce((total, order) => total + Number(order.cost), 0);
+    return deals.reduce((total, deal) => total + Number(deal.cost), 0);
   }
 
   function getPaidRevenue() {
@@ -85,8 +85,8 @@ function Dashboard() {
   }
 
   const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Invoiced', 'Paid'];
-  const types = ['All', ...new Set(orders.map((o) => o.type))];
-  const clientNames = ['All', ...new Set(orders.map((o) => o.clientName))];
+  const types = ['All', ...new Set(deals.map((d) => d.type))];
+  const clientNames = ['All', ...new Set(deals.map((d) => d.clientName))];
 
   return (
     <div className="dashboard page-container">
@@ -150,8 +150,8 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="orders-table">
-        <h3>Orders ({filteredOrders.length})</h3>
+      <div className="deals-table">
+        <h3>Deals ({filteredDeals.length})</h3>
         <div className="table-wrapper">
           <table className="table">
             <thead>
@@ -164,24 +164,24 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
-                  <tr key={order.id}>
-                      <td data-label="Client">{order.clientName}</td>
-                    <td data-label="Project Type">{order.type}</td>
-                    <td data-label="Date Accepted">{order.dateAccepted}</td>
+              {filteredDeals.length > 0 ? (
+                filteredDeals.map((deal) => (
+                  <tr key={deal.id}>
+                      <td data-label="Client">{deal.clientName}</td>
+                    <td data-label="Project Type">{deal.type}</td>
+                    <td data-label="Date Accepted">{deal.dateAccepted}</td>
                     <td data-label="Status">
-                      <span className={`status-badge status-${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
-                        {order.status}
+                      <span className={`status-badge status-${deal.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                        {deal.status}
                       </span>
                     </td>
-                    <td data-label="Project Cost">{currencyFormatter.format(Number(order.cost || 0))}</td>
+                    <td data-label="Project Cost">{currencyFormatter.format(Number(deal.cost || 0))}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan="5" className="empty-state">
-                    No orders found
+                    No deals found
                   </td>
                 </tr>
               )}
