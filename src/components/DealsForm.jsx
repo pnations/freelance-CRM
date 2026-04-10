@@ -15,6 +15,35 @@ function DealsForm() {
     maximumFractionDigits: 2,
   });
 
+  function normalizeCostInput(value) {
+    const cleaned = String(value ?? '').replace(/[^\d.,]/g, '').replace(/,/g, '');
+    const [whole = '', ...fractionParts] = cleaned.split('.');
+    const fraction = fractionParts.join('');
+
+    return fractionParts.length > 0 ? `${whole}.${fraction}` : whole;
+  }
+
+  function parseCostValue(value) {
+    const normalized = normalizeCostInput(value);
+    if (!normalized) {
+      return NaN;
+    }
+
+    return Number(normalized);
+  }
+
+  function formatCostForDisplay(value) {
+    const amount = parseCostValue(value);
+    if (!Number.isFinite(amount)) {
+      return '';
+    }
+
+    return amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
   const [deals, setDeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const {
@@ -75,7 +104,15 @@ function DealsForm() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (formData.clientName && formData.clientContactPerson && formData.type && formData.dateAccepted && formData.cost) {
+    const parsedCost = parseCostValue(formData.cost);
+
+    if (
+      formData.clientName.trim()
+      && formData.clientContactPerson.trim()
+      && formData.type.trim()
+      && formData.dateAccepted
+      && Number.isFinite(parsedCost)
+    ) {
       setIsSubmitting(true);
       setErrorMessage('');
       try {
@@ -90,7 +127,7 @@ function DealsForm() {
             formData.type,
             formData.dateAccepted,
             formData.status,
-            parseFloat(formData.cost)
+            parsedCost
           );
           setEditingId(null);
         } else {
@@ -103,7 +140,7 @@ function DealsForm() {
             formData.type,
             formData.dateAccepted,
             formData.status,
-            parseFloat(formData.cost)
+            parsedCost
           );
         }
         resetForm();
@@ -113,6 +150,8 @@ function DealsForm() {
       } finally {
         setIsSubmitting(false);
       }
+    } else {
+      setErrorMessage('Please complete all required fields with valid values.');
     }
   }
 
@@ -126,7 +165,7 @@ function DealsForm() {
       type: deal.type || '',
       dateAccepted: deal.dateAccepted || '',
       status: deal.status || 'Pending',
-      cost: deal.cost || '',
+      cost: formatCostForDisplay(deal.cost),
     });
     setEditingId(deal.id);
     setShowForm(true);
@@ -192,72 +231,61 @@ function DealsForm() {
       {showForm && (
         <form className="form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Client Name</label>
+            <label>Business Name *</label>
             <input
               type="text"
               value={formData.clientName}
               onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-              placeholder="Enter client name"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Contact Person</label>
+            <label>Contact Person *</label>
             <input
               type="text"
               value={formData.clientContactPerson}
               onChange={(e) => setFormData({ ...formData, clientContactPerson: e.target.value })}
-              placeholder="Enter contact person"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Email (optional)</label>
-            <input
-              type="email"
-              value={formData.clientEmail}
-              onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-              placeholder="name@company.com"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Phone (optional)</label>
-            <input
-              type="tel"
-              value={formData.clientPhone}
-              onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-              placeholder="(555) 123-4567"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Client Notes (optional)</label>
-            <textarea
-              value={formData.clientNotes}
-              onChange={(e) => setFormData({ ...formData, clientNotes: e.target.value })}
-              rows="3"
-              placeholder="Key client preferences, constraints, or context"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Project Type</label>
+            <label>Project Type *</label>
             <input
               type="text"
               value={formData.type}
               onChange={(e) =>
                 setFormData({ ...formData, type: e.target.value })
               }
-              placeholder="e.g., Web Development"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Date Accepted</label>
+            <label>Project Cost *</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={formData.cost}
+              onChange={(e) =>
+                setFormData({ ...formData, cost: normalizeCostInput(e.target.value) })
+              }
+              onFocus={() =>
+                setFormData({ ...formData, cost: normalizeCostInput(formData.cost) })
+              }
+              onBlur={() =>
+                setFormData({
+                  ...formData,
+                  cost: formatCostForDisplay(formData.cost),
+                })
+              }
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Date Accepted *</label>
             <input
               type="date"
               value={formData.dateAccepted}
@@ -285,16 +313,29 @@ function DealsForm() {
           </div>
 
           <div className="form-group">
-            <label>Project Cost</label>
+            <label>Email</label>
             <input
-              type="number"
-              value={formData.cost}
-              onChange={(e) =>
-                setFormData({ ...formData, cost: e.target.value })
-              }
-              placeholder="0.00"
-              step="0.01"
-              required
+              type="email"
+              value={formData.clientEmail}
+              onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Phone</label>
+            <input
+              type="tel"
+              value={formData.clientPhone}
+              onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Deal Notes</label>
+            <textarea
+              value={formData.clientNotes}
+              onChange={(e) => setFormData({ ...formData, clientNotes: e.target.value })}
+              rows="3"
             />
           </div>
 
@@ -354,7 +395,7 @@ function DealsForm() {
       <ConfirmDialog
         isOpen={Boolean(confirmDeleteId)}
         title="Delete deal"
-        message="This will permanently delete the deal and any related payments and hours."
+        message="This will permanently delete the deal and any related payments."
         confirmLabel="Delete deal"
         danger
         onConfirm={confirmDelete}

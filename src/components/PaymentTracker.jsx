@@ -402,7 +402,7 @@ function PaymentTracker() {
       {showForm && (
         <form className="form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Deal</label>
+            <label>Deal *</label>
             <select
               value={formData.orderId}
               onChange={(e) =>
@@ -420,7 +420,7 @@ function PaymentTracker() {
           </div>
 
           <div className="form-group">
-            <label>Amount Paid</label>
+            <label>Amount Paid *</label>
             <input
               type="number"
               value={formData.amount}
@@ -434,7 +434,7 @@ function PaymentTracker() {
           </div>
 
           <div className="form-group">
-            <label>Payment Date</label>
+            <label>Payment Date *</label>
             <input
               type="date"
               value={formData.date}
@@ -446,12 +446,13 @@ function PaymentTracker() {
           </div>
 
           <div className="form-group">
-            <label>Payment Method</label>
+            <label>Payment Method *</label>
             <select
               value={formData.method}
               onChange={(e) =>
                 setFormData({ ...formData, method: e.target.value })
               }
+              required
             >
               <option value="Bank Transfer">Bank Transfer</option>
               <option value="PayPal">PayPal</option>
@@ -462,7 +463,7 @@ function PaymentTracker() {
           </div>
 
           <div className="form-group">
-            <label>Hours (optional)</label>
+            <label>Hours</label>
             <input
               type="number"
               value={formData.hours}
@@ -476,7 +477,7 @@ function PaymentTracker() {
           </div>
 
           <div className="form-group">
-            <label>Comment (optional)</label>
+            <label>Comment</label>
             <textarea
               value={formData.comment}
               onChange={(e) =>
