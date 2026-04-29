@@ -5,6 +5,7 @@ import '../styles/tables.css';
 import '../styles/panels.css';
 
 function Dashboard() {
+  // Standard formatter used across the dashboard for revenues and costs.
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -12,18 +13,24 @@ function Dashboard() {
     maximumFractionDigits: 2,
   });
 
+  // Raw API data loaded from Supabase.
   const [deals, setDeals] = useState([]);
   const [payments, setPayments] = useState([]);
+
+  // Filtered results shown in the dashboard table.
   const [filteredDeals, setFilteredDeals] = useState([]);
+
+  // UI filter state for the dashboard controls.
   const [statusFilter, setStatusFilter] = useState('All');
   const [clientFilter, setClientFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    // Load fresh dashboard data when the page mounts.
     loadData();
-    
-    // Auto-refresh every 30 seconds
+
+    // Auto-refresh every 30 seconds so summary metrics stay current.
     const interval = setInterval(() => {
       loadData();
     }, 30000);
@@ -32,6 +39,7 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // Re-run filter logic whenever deals or filter controls change.
     applyFilters();
   }, [deals, statusFilter, clientFilter, typeFilter]);
 
@@ -51,6 +59,7 @@ function Dashboard() {
   }
 
   function applyFilters() {
+    // Apply the dashboard filters in a predictable order.
     let filtered = deals;
 
     if (statusFilter !== 'All') {
@@ -68,6 +77,7 @@ function Dashboard() {
     setFilteredDeals(filtered);
   }
 
+  // Derived values used by the top-level metric cards.
   function getTotalRevenue() {
     return deals.reduce((total, deal) => total + Number(deal.cost), 0);
   }
@@ -77,6 +87,7 @@ function Dashboard() {
   }
 
   function getPendingPayments() {
+    // Pending payments are the remaining amount from total deals minus collected payments.
     return getTotalRevenue() - getPaidRevenue();
   }
 
@@ -84,6 +95,7 @@ function Dashboard() {
     return payments.reduce((total, payment) => total + Number(payment.hours || 0), 0);
   }
 
+  // Filter options for the dashboard controls.
   const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Invoiced', 'Paid'];
   const types = ['All', ...new Set(deals.map((d) => d.type))];
   const clientNames = ['All', ...new Set(deals.map((d) => d.clientName))];

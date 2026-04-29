@@ -5,15 +5,22 @@ import DealsForm from './components/DealsForm';
 import PaymentTracker from './components/PaymentTracker';
 import Navigation from './components/Navigation';
 
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'deals', label: 'Deals' },
+  { id: 'payments', label: 'Payments' },
+];
+
+// Map page keys to page components so the root app shell stays simple.
+const PAGE_COMPONENTS = {
+  dashboard: <Dashboard />,
+  deals: <DealsForm />,
+  payments: <PaymentTracker />,
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isNavOpen, setIsNavOpen] = useState(false);
-
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'deals', label: 'Deals' },
-    { id: 'payments', label: 'Payments' },
-  ];
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -34,7 +41,7 @@ function App() {
   return (
     <div className="app">
       <Navigation
-        navItems={navItems}
+        navItems={NAV_ITEMS}
         currentPage={currentPage}
         isNavOpen={isNavOpen}
         onToggleNav={() => setIsNavOpen((open) => !open)}
@@ -44,9 +51,7 @@ function App() {
       />
 
       <main className="main-content">
-        {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'deals' && <DealsForm />}
-        {currentPage === 'payments' && <PaymentTracker />}
+        {PAGE_COMPONENTS[currentPage]}
       </main>
     </div>
   );

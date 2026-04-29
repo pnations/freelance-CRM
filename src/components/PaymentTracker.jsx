@@ -22,6 +22,7 @@ function PaymentTracker() {
     maximumFractionDigits: 2,
   });
 
+  // Primary page state for payments, deals, and page-level UI controls.
   const [payments, setPayments] = useState([]);
   const [deals, setDeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +68,7 @@ function PaymentTracker() {
   });
 
   useEffect(() => {
+    // Load payments and related deals when the payment page mounts.
     loadData();
   }, []);
 
@@ -75,6 +77,7 @@ function PaymentTracker() {
       setActionsMenu(null);
     }
 
+    // Close the floating actions menu when users click outside it.
     function handleDocumentClick(event) {
       if (event.target.closest('.actions-dropdown-menu-floating') || event.target.closest('.actions-menu-trigger')) {
         return;
@@ -129,6 +132,7 @@ function PaymentTracker() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    // Only submit when the required payment fields are present.
     if (formData.orderId && formData.amount && formData.date) {
       setIsSubmitting(true);
       setErrorMessage('');
@@ -162,6 +166,7 @@ function PaymentTracker() {
     return String(value ?? '');
   }
 
+  // Helpers to resolve payment/deal relationships for UI display.
   function getPaymentsForDeal(dealId) {
     const normalizedDealId = normalizeId(dealId);
     return payments.filter((payment) => normalizeId(payment.orderId) === normalizedDealId);
@@ -187,6 +192,7 @@ function PaymentTracker() {
     setInvoiceDealId(null);
   }
 
+  // Begin the inline edit workflow for a payment row.
   function startEditPayment(payment) {
     setEditingPaymentId(payment.id);
     setEditingPaymentDraft({
@@ -252,6 +258,7 @@ function PaymentTracker() {
     }
   }
 
+  // Search payments and related deal information for quick filtering.
   function getFilteredPayments() {
     if (!searchQuery.trim()) {
       return payments;
@@ -320,6 +327,7 @@ function PaymentTracker() {
     }
   }
 
+  // Keyboard navigation support for the floating actions menu.
   function handleActionsMenuKeyDown(event) {
     const enabledItems = menuItemRefs.current.filter(Boolean);
     if (!enabledItems.length) {

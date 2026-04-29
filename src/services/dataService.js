@@ -1,5 +1,10 @@
 import { getSupabaseClient } from './supabase';
 
+const TABLES = {
+  DEALS: 'orders',
+  PAYMENTS: 'payments',
+};
+
 function formatDbError(error, fallbackMessage) {
   if (!error) {
     return fallbackMessage;
@@ -8,7 +13,48 @@ function formatDbError(error, fallbackMessage) {
   return error.message || fallbackMessage;
 }
 
-// Deals
+function buildDealPayload(
+  clientName,
+  clientContactPerson,
+  clientEmail,
+  clientPhone,
+  clientNotes,
+  type,
+  dateAccepted,
+  status,
+  cost
+) {
+  return {
+    clientName,
+    clientContactPerson,
+    clientEmail,
+    clientPhone,
+    clientNotes,
+    type,
+    dateAccepted,
+    status,
+    cost,
+  };
+}
+
+function buildPaymentPayload(orderId, amount, date, method, options = {}) {
+  const payload = { orderId, amount, date, method };
+  const { hours, comment } = options;
+  const normalizedHours = Number(hours);
+  const shouldStoreHours = Number.isFinite(normalizedHours) && normalizedHours > 0;
+
+  if (typeof comment === 'string' && comment.trim()) {
+    payload.comment = comment.trim();
+  }
+
+  if (shouldStoreHours) {
+    payload.hours = normalizedHours;
+  }
+
+  return payload;
+}
+
+// Deal CRUD
 export async function addDeal(
   clientName,
   clientContactPerson,
@@ -23,22 +69,21 @@ export async function addDeal(
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('orders')
-    .insert([
-      {
-        clientName,
-        clientContactPerson,
-        clientEmail,
-        clientPhone,
-        clientNotes,
-        type,
-        dateAccepted,
-        status,
-        cost,
-      },
-    ])
+    .from(TABLES.DEALS)
+    .insert([buildDealPayload(
+      clientName,
+      clientContactPerson,
+      clientEmail,
+      clientPhone,
+      clientNotes,
+      type,
+      dateAccepted,
+      status,
+      cost,
+    )])
     .select()
     .single();
+
   if (error) throw new Error(formatDbError(error, 'Failed to create deal.'));
   return data;
 }
@@ -47,7 +92,7 @@ export async function getDeals() {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('orders')
+    .from(TABLES.DEALS)
     .select('*');
   if (error) throw new Error(formatDbError(error, 'Failed to load deals.'));
   return data || [];
@@ -68,8 +113,8 @@ export async function updateDeal(
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('orders')
-    .update({
+    .from(TABLES.DEALS)
+    .update(buildDealPayload(
       clientName,
       clientContactPerson,
       clientEmail,
@@ -79,10 +124,11 @@ export async function updateDeal(
       dateAccepted,
       status,
       cost,
-    })
+    ))
     .eq('id', id)
     .select()
     .single();
+
   if (error) throw new Error(formatDbError(error, 'Failed to update deal.'));
   return data;
 }
@@ -90,38 +136,27 @@ export async function updateDeal(
 export async function deleteDeal(id) {
   const supabase = getSupabaseClient();
 
-  // Keep application-level cascade explicit for reliability across environments.
+  // Explicitly remove related payments first so deal deletion remains reliable.
   const { error: paymentError } = await supabase
-    .from('payments')
+    .from(TABLES.PAYMENTS)
     .delete()
     .eq('orderId', id);
   if (paymentError) throw new Error(formatDbError(paymentError, 'Failed to remove related payments.'));
 
   const { error } = await supabase
-    .from('orders')
+    .from(TABLES.DEALS)
     .delete()
     .eq('id', id);
   if (error) throw new Error(formatDbError(error, 'Failed to delete deal.'));
 }
 
-// Payments
+// Payment CRUD
 export async function addPayment(orderId, amount, date, method, options = {}) {
   const supabase = getSupabaseClient();
-
-  const { hours, comment } = options;
-  const normalizedHours = Number(hours);
-  const shouldStoreHours = Number.isFinite(normalizedHours) && normalizedHours > 0;
-
-  const paymentInsert = { orderId, amount, date, method };
-  if (typeof comment === 'string' && comment.trim()) {
-    paymentInsert.comment = comment.trim();
-  }
-  if (shouldStoreHours) {
-    paymentInsert.hours = normalizedHours;
-  }
+  const paymentInsert = buildPaymentPayload(orderId, amount, date, method, options);
 
   const { data, error } = await supabase
-    .from('payments')
+    .from(TABLES.PAYMENTS)
     .insert([paymentInsert])
     .select()
     .single();
@@ -134,7 +169,7 @@ export async function getPayments() {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('payments')
+    .from(TABLES.PAYMENTS)
     .select('*');
   if (error) throw new Error(formatDbError(error, 'Failed to load payments.'));
   return data || [];
@@ -142,7 +177,6 @@ export async function getPayments() {
 
 export async function updatePayment(id, orderId, amount, date, method, options = {}) {
   const supabase = getSupabaseClient();
-
   const { hours, comment } = options;
   const normalizedHours = Number(hours);
   const shouldStoreHours = Number.isFinite(normalizedHours) && normalizedHours > 0;
@@ -156,7 +190,7 @@ export async function updatePayment(id, orderId, amount, date, method, options =
   }
 
   const { data, error } = await supabase
-    .from('payments')
+    .from(TABLES.PAYMENTS)
     .update(paymentUpdate)
     .eq('id', id)
     .select()
@@ -170,7 +204,7 @@ export async function deletePayment(id) {
   const supabase = getSupabaseClient();
 
   const { error } = await supabase
-    .from('payments')
+    .from(TABLES.PAYMENTS)
     .delete()
     .eq('id', id);
   if (error) throw new Error(formatDbError(error, 'Failed to delete payment.'));

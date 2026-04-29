@@ -44,8 +44,11 @@ function DealsForm() {
     });
   }
 
+  // Deal list and search input state for the deals page.
   const [deals, setDeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reusable form handling logic from our custom hook.
   const {
     formData,
     setFormData,
@@ -70,6 +73,7 @@ function DealsForm() {
     cost: '',
   }));
 
+  // Confirm delete flow uses shared hook for consistent deletion dialog behavior.
   const {
     deletingId,
     confirmDeleteId,
@@ -87,6 +91,7 @@ function DealsForm() {
   });
 
   useEffect(() => {
+    // Load deals once when the component mounts.
     loadData();
   }, []);
 
@@ -106,6 +111,7 @@ function DealsForm() {
 
     const parsedCost = parseCostValue(formData.cost);
 
+    // Form validation for required fields and numeric cost values.
     if (
       formData.clientName.trim()
       && formData.clientContactPerson.trim()
@@ -176,6 +182,7 @@ function DealsForm() {
     requestDelete(id);
   }
 
+  // Filter deals dynamically based on the search query.
   function getFilteredDeals() {
     if (!searchQuery.trim()) {
       return deals;
@@ -345,6 +352,7 @@ function DealsForm() {
         </form>
       )}
 
+      {/* Show the deals table only when the form is hidden. */}
       {!showForm && (
         <div className="table-wrapper">
           <table className="table">
