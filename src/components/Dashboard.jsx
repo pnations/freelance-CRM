@@ -43,6 +43,9 @@ function Dashboard() {
     applyFilters();
   }, [deals, statusFilter, clientFilter, typeFilter]);
 
+
+   // Load deals and payments from the API, and handle any errors that occur.
+
   async function loadData() {
     try {
       const dealsData = await getDeals();
@@ -57,6 +60,7 @@ function Dashboard() {
       setErrorMessage(error.message || 'Failed to load dashboard data.');
     }
   }
+  
 
   function applyFilters() {
     // Apply the dashboard filters in a predictable order.
