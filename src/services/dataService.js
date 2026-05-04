@@ -1,17 +1,5 @@
 import { getSupabaseClient } from './supabase';
 
-/**
- * Data service layer for the Freelance CRM app.
- * 
- * This module centralizes all Supabase database operations for deals and payments.
- * It provides CRUD functions that components can call without directly importing Supabase.
- * 
- * Key features:
- * - Payload builders to normalize data before insertion/update
- * - Error formatting for consistent error messages
- * - Cascade delete for deals (removes related payments first)
- */
-
 // Table names in Supabase. Using constants prevents typos and makes renaming easier.
 const TABLES = {
   DEALS: 'orders',
@@ -120,7 +108,6 @@ export async function addDeal(
 
 /**
  * Retrieves all deals from the database.
- * Returns an empty array if no deals exist.
  */
 export async function getDeals() {
   const supabase = getSupabaseClient();
@@ -196,7 +183,6 @@ export async function deleteDeal(id) {
 }
 
 // Payment CRUD
-
 /**
  * Logs a new payment for a deal.
  * Inserts into the 'payments' table with optional hours and comment.
