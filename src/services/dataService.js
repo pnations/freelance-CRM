@@ -31,7 +31,12 @@ async function shouldUseDemoData() {
     .select('id')
     .limit(1);
 
-  if (error) throw new Error(formatDbError(error, 'Failed to load deals.'));
+  // This is a demo-first app: an unavailable Supabase project should never
+  // leave the preview blank. Use the local sample workspace instead.
+  if (error) {
+    dataMode = 'demo';
+    return true;
+  }
 
   dataMode = data?.length ? 'supabase' : 'demo';
   return dataMode === 'demo';

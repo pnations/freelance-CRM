@@ -1,4 +1,5 @@
-const DEMO_STORAGE_KEY = 'freelance-crm-demo-data';
+// Versioning ensures that a stale, empty demo cache cannot hide the new seed data.
+const DEMO_STORAGE_KEY = 'freelance-crm-demo-data-v2';
 
 const INITIAL_DEMO_DATA = {
   deals: [
