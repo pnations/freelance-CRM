@@ -61,7 +61,7 @@ npm run preview
 
 ## Data Mode
 
-The app runs in Supabase-only mode and requires valid Supabase environment variables. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` before running the app.
+The app works immediately in demo mode with sample deals and payments stored in the browser. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to use persistent Supabase data instead.
 
 ## Future Roadmap
 

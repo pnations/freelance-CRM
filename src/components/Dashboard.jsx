@@ -24,7 +24,6 @@ function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [clientFilter, setClientFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
-  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Load fresh dashboard data when the page mounts.
@@ -53,11 +52,9 @@ function Dashboard() {
 
       setDeals(dealsData);
       setPayments(paymentsData);
-      setErrorMessage('');
     } catch (error) {
       setDeals([]);
       setPayments([]);
-      setErrorMessage(error.message || 'Failed to load dashboard data.');
     }
   }
   
@@ -107,8 +104,6 @@ function Dashboard() {
   return (
     <div className="dashboard page-container">
       <h2 className="page-title">Dashboard Overview</h2>
-      {errorMessage && <p className="error-banner">{errorMessage}</p>}
-
       <div className="metrics">
         <div className="metric-card">
           <div className="metric-label">Total Revenue</div>

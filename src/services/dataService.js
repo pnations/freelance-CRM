@@ -1,10 +1,41 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseClient, isSupabaseConfigured } from './supabase';
+import {
+  addDemoDeal,
+  addDemoPayment,
+  deleteDemoDeal,
+  deleteDemoPayment,
+  getDemoDeals,
+  getDemoPayments,
+  updateDemoDeal,
+  updateDemoPayment,
+} from './demoData';
 
 // Table names in Supabase. Using constants prevents typos and makes renaming easier.
 const TABLES = {
   DEALS: 'orders',
   PAYMENTS: 'payments',
 };
+
+// A configured but empty Supabase project is still a demo experience. Decide the
+// data source once per session so every screen uses the same records.
+let dataMode = isSupabaseConfigured ? 'unknown' : 'demo';
+
+async function shouldUseDemoData() {
+  if (dataMode !== 'unknown') {
+    return dataMode === 'demo';
+  }
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from(TABLES.DEALS)
+    .select('id')
+    .limit(1);
+
+  if (error) throw new Error(formatDbError(error, 'Failed to load deals.'));
+
+  dataMode = data?.length ? 'supabase' : 'demo';
+  return dataMode === 'demo';
+}
 
 /**
  * Formats Supabase errors into user-friendly messages.
@@ -84,6 +115,12 @@ export async function addDeal(
   status,
   cost
 ) {
+  if (await shouldUseDemoData()) {
+    return addDemoDeal(buildDealPayload(
+      clientName, clientContactPerson, clientEmail, clientPhone, clientNotes, type, dateAccepted, status, cost,
+    ));
+  }
+
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -110,6 +147,8 @@ export async function addDeal(
  * Retrieves all deals from the database.
  */
 export async function getDeals() {
+  if (await shouldUseDemoData()) return getDemoDeals();
+
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -135,6 +174,12 @@ export async function updateDeal(
   status,
   cost
 ) {
+  if (await shouldUseDemoData()) {
+    return updateDemoDeal(id, buildDealPayload(
+      clientName, clientContactPerson, clientEmail, clientPhone, clientNotes, type, dateAccepted, status, cost,
+    ));
+  }
+
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -166,6 +211,11 @@ export async function updateDeal(
  * If payment deletion fails, the deal is not deleted.
  */
 export async function deleteDeal(id) {
+  if (await shouldUseDemoData()) {
+    deleteDemoDeal(id);
+    return;
+  }
+
   const supabase = getSupabaseClient();
 
   // Explicitly remove related payments first so deal deletion remains reliable.
@@ -188,6 +238,10 @@ export async function deleteDeal(id) {
  * Inserts into the 'payments' table with optional hours and comment.
  */
 export async function addPayment(orderId, amount, date, method, options = {}) {
+  if (await shouldUseDemoData()) {
+    return addDemoPayment(buildPaymentPayload(orderId, amount, date, method, options));
+  }
+
   const supabase = getSupabaseClient();
   const paymentInsert = buildPaymentPayload(orderId, amount, date, method, options);
 
@@ -206,6 +260,8 @@ export async function addPayment(orderId, amount, date, method, options = {}) {
  * Returns an empty array if no payments exist.
  */
 export async function getPayments() {
+  if (await shouldUseDemoData()) return getDemoPayments();
+
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -220,6 +276,14 @@ export async function getPayments() {
  * Resets hours/comment to null if not provided, to avoid stale data.
  */
 export async function updatePayment(id, orderId, amount, date, method, options = {}) {
+  if (await shouldUseDemoData()) {
+    const paymentUpdate = { orderId, amount, date, method, comment: null, hours: null };
+    const normalizedHours = Number(options.hours);
+    if (typeof options.comment === 'string' && options.comment.trim()) paymentUpdate.comment = options.comment.trim();
+    if (Number.isFinite(normalizedHours) && normalizedHours > 0) paymentUpdate.hours = normalizedHours;
+    return updateDemoPayment(id, paymentUpdate);
+  }
+
   const supabase = getSupabaseClient();
   const { hours, comment } = options;
   const normalizedHours = Number(hours);
@@ -249,6 +313,11 @@ export async function updatePayment(id, orderId, amount, date, method, options =
  * No cascade needed since payments don't have dependents.
  */
 export async function deletePayment(id) {
+  if (await shouldUseDemoData()) {
+    deleteDemoPayment(id);
+    return;
+  }
+
   const supabase = getSupabaseClient();
 
   const { error } = await supabase
